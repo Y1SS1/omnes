@@ -1,0 +1,162 @@
+import { useEffect, useState } from "react";
+import * as walletApi from "../api/wallet";
+import * as categoriesApi from "../api/categories";
+import type { Category, TransactionDto, TransactionType, WalletDto } from "../api/types";
+import { Button, Card, ColorDot, Input, Modal, PageTitle, Select } from "../components/ui";
+
+export default function WalletPage() {
+  const [wallet, setWallet] = useState<WalletDto | null>(null);
+  const [transactions, setTransactions] = useState<TransactionDto[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [txModalOpen, setTxModalOpen] = useState(false);
+
+  const [newBalance, setNewBalance] = useState("");
+
+  const [amount, setAmount] = useState("");
+  const [type, setType] = useState<TransactionType>("Expense");
+  const [categoryId, setCategoryId] = useState("");
+  const [description, setDescription] = useState("");
+
+  const load = async () => {
+    const [w, txs, cats] = await Promise.all([
+      walletApi.getWallet(),
+      walletApi.getTransactions(),
+      categoriesApi.getCategories("Expense"),
+    ]);
+    setWallet(w);
+    setTransactions(txs);
+    setCategories(cats);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleSetBalance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(newBalance);
+    if (Number.isNaN(amt)) return;
+    await walletApi.setBalance(amt);
+    setNewBalance("");
+    setBalanceModalOpen(false);
+    load();
+  };
+
+  const handleCreateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = Number(amount);
+    if (Number.isNaN(amt) || amt <= 0) return;
+    await walletApi.createTransaction({
+      amount: amt,
+      type,
+      categoryId: categoryId || null,
+      description: description || null,
+    });
+    setAmount("");
+    setDescription("");
+    setCategoryId("");
+    setTxModalOpen(false);
+    load();
+  };
+
+  const removeTx = async (id: string) => {
+    await walletApi.deleteTransaction(id);
+    load();
+  };
+
+  return (
+    <div>
+      <PageTitle title="Billetera virtual" subtitle="Controla tu saldo y cada gasto o ingreso." />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <p className="text-sm text-slate-500">Saldo disponible</p>
+          <p className="text-3xl font-bold mb-4">
+            {wallet ? wallet.balance.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
+            <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
+              Ajustar saldo
+            </Button>
+          </div>
+        </Card>
+        <Card>
+          <p className="text-sm text-slate-500">Fondo de ahorro intocable</p>
+          <p className="text-3xl font-bold text-emerald-600">
+            {wallet ? wallet.savingsFund.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
+          </p>
+          <p className="text-xs text-slate-400 mt-2">Administra tus ahorros en la sección Ahorros.</p>
+        </Card>
+      </div>
+
+      <Card>
+        <h2 className="font-semibold mb-3">Historial de movimientos</h2>
+        {transactions.length === 0 && <p className="text-sm text-slate-400">Sin movimientos todavía.</p>}
+        <ul className="divide-y divide-slate-100">
+          {transactions.map((t) => (
+            <li key={t.id} className="py-3 flex items-center gap-3">
+              {t.categoryColor && <ColorDot color={t.categoryColor} />}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-slate-800">
+                  {t.categoryName ?? "Sin categoría"} {t.description && `· ${t.description}`}
+                </div>
+                <div className="text-xs text-slate-400">
+                  {new Date(t.date).toLocaleDateString("es-CL", { dateStyle: "medium" })}
+                </div>
+              </div>
+              <div className={`text-sm font-semibold ${t.type === "Income" ? "text-emerald-600" : "text-red-500"}`}>
+                {t.type === "Income" ? "+" : "-"}
+                {t.amount.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
+              </div>
+              <button onClick={() => removeTx(t.id)} className="text-slate-300 hover:text-red-500 text-sm">
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Modal open={balanceModalOpen} onClose={() => setBalanceModalOpen(false)} title="Ajustar saldo disponible">
+        <form onSubmit={handleSetBalance} className="space-y-3">
+          <Input
+            type="number"
+            placeholder="Monto"
+            value={newBalance}
+            onChange={(e) => setNewBalance(e.target.value)}
+            required
+          />
+          <Button type="submit" className="w-full">Guardar</Button>
+        </form>
+      </Modal>
+
+      <Modal open={txModalOpen} onClose={() => setTxModalOpen(false)} title="Nuevo gasto o ingreso">
+        <form onSubmit={handleCreateTx} className="space-y-3">
+          <Select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
+            <option value="Expense">Gasto</option>
+            <option value="Income">Ingreso</option>
+          </Select>
+          <Input
+            type="number"
+            placeholder="Monto"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+          <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <option value="">Sin categoría</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+          <Input placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <Button type="submit" className="w-full">Guardar</Button>
+        </form>
+      </Modal>
+    </div>
+  );
+}

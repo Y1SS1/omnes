@@ -1,0 +1,53 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Button, Input } from "../components/ui";
+
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await login(email, password);
+      navigate("/");
+    } catch {
+      setError("Correo o contraseña incorrectos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 shadow-sm p-8">
+        <h1 className="text-2xl font-bold text-center mb-1">TaskFlow</h1>
+        <p className="text-sm text-slate-500 text-center mb-6">Organiza tu vida y tus finanzas</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
+          </Button>
+        </form>
+        <p className="text-sm text-center text-slate-500 mt-4">
+          ¿No tienes cuenta? <Link to="/register" className="text-indigo-600 font-medium">Regístrate</Link>
+        </p>
+      </div>
+    </div>
+  );
+}

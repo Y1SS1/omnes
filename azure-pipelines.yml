@@ -1,0 +1,43 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+stages:
+  - stage: Backend
+    displayName: "Backend build"
+    jobs:
+      - job: BuildBackend
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: "sdk"
+              version: "8.x"
+          - script: dotnet restore
+            workingDirectory: backend/TaskFlow.Api
+            displayName: "dotnet restore"
+          - script: dotnet build --no-restore --configuration Release
+            workingDirectory: backend/TaskFlow.Api
+            displayName: "dotnet build"
+
+  - stage: Frontend
+    displayName: "Frontend build"
+    dependsOn: []
+    jobs:
+      - job: BuildFrontend
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
+          - script: npm ci
+            workingDirectory: frontend
+            displayName: "npm ci"
+          - script: npx tsc -b --noEmit
+            workingDirectory: frontend
+            displayName: "type-check"
+          - script: npm run build
+            workingDirectory: frontend
+            displayName: "npm run build"
