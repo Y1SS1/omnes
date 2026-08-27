@@ -39,7 +39,7 @@ export default function BudgetPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold capitalize">{monthLabel}</h2>
             {progress && (
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-neutral-400">
                 {progress.spent.toLocaleString("es-CL", { style: "currency", currency: "CLP" })} de{" "}
                 {progress.limitAmount.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
               </span>
@@ -47,12 +47,12 @@ export default function BudgetPage() {
           </div>
           {progress && <ProgressBar percent={progress.percentUsed} color={progress.color} />}
           {progress && (
-            <p className="text-sm text-slate-500 mt-2">
+            <p className="text-sm text-neutral-400 mt-2">
               Has usado el <span className="font-semibold">{progress.percentUsed}%</span> de tu presupuesto.
             </p>
           )}
           {progress && progress.percentUsed >= 90 && (
-            <p className="text-sm text-red-600 mt-2 font-medium">
+            <p className="text-sm text-red-400 mt-2 font-medium">
               ⚠️ Atención, estás muy cerca de llegar a tu objetivo máximo de gasto este mes.
             </p>
           )}

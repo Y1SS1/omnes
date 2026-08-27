@@ -72,23 +72,23 @@ export default function HabitsPage() {
       </div>
 
       <Card>
-        {habits.length === 0 && <p className="text-sm text-slate-400">No tienes hábitos programados para hoy.</p>}
+        {habits.length === 0 && <p className="text-sm text-neutral-500">No tienes hábitos programados para hoy.</p>}
         <ul className="space-y-2">
           {[...pending, ...done].map((h) => (
             <li key={h.id} className="flex items-center gap-3 py-1">
               <button
                 onClick={() => toggleCheck(h.id)}
                 className={`h-6 w-6 rounded-full border flex items-center justify-center text-sm shrink-0 ${
-                  h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-300"
+                  h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-neutral-700"
                 }`}
               >
                 {h.habitCheckedToday ? "✓" : ""}
               </button>
-              <span className={`text-sm flex-1 ${h.habitCheckedToday ? "line-through text-slate-400" : "text-slate-800"}`}>
+              <span className={`text-sm flex-1 ${h.habitCheckedToday ? "line-through text-neutral-500" : "text-neutral-100"}`}>
                 {h.title}
               </span>
-              <span className="text-[11px] text-slate-400">{h.repeatDays}</span>
-              <button onClick={() => removeHabit(h.id)} className="text-slate-300 hover:text-red-500 text-sm">
+              <span className="text-[11px] text-neutral-500">{h.repeatDays}</span>
+              <button onClick={() => removeHabit(h.id)} className="text-neutral-600 hover:text-red-500 text-sm">
                 ✕
               </button>
             </li>
@@ -100,7 +100,7 @@ export default function HabitsPage() {
         <form onSubmit={handleCreate} className="space-y-4">
           <Input placeholder="Ej: Tomar medicamento" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <div>
-            <label className="text-xs text-slate-500 block mb-2">Días de la semana</label>
+            <label className="text-xs text-neutral-400 block mb-2">Días de la semana</label>
             <div className="flex flex-wrap gap-2">
               {ALL_DAYS.map((day) => (
                 <button
@@ -110,7 +110,7 @@ export default function HabitsPage() {
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
                     selectedDays.has(day)
                       ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "border-slate-300 text-slate-600"
+                      : "border-neutral-700 text-neutral-300"
                   }`}
                 >
                   {dayLabels[day]}

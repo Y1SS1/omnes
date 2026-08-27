@@ -24,6 +24,15 @@ import type {
 } from "../api/types";
 import { Card, PageTitle } from "../components/ui";
 
+const axisTick = { fill: "#a3a3a3", fontSize: 11 };
+const gridStroke = "#404040";
+const tooltipStyle = {
+  contentStyle: { background: "#171717", border: "1px solid #404040", borderRadius: 8, color: "#fff" },
+  labelStyle: { color: "#fff" },
+  itemStyle: { color: "#e5e5e5" },
+};
+const legendStyle = { color: "#d4d4d4" };
+
 export default function ReportsPage() {
   const now = new Date();
   const year = now.getFullYear();
@@ -53,19 +62,19 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <h2 className="font-semibold mb-1">Cumplimiento de hábitos</h2>
-          <p className="text-xs text-slate-500 mb-3">Días cumplidos vs. días programados este mes.</p>
+          <p className="text-xs text-neutral-400 mb-3">Días cumplidos vs. días programados este mes.</p>
           {habitReport.length === 0 ? (
             <EmptyState />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={habitReport}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="habitTitle" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                <XAxis dataKey="habitTitle" tick={axisTick} />
+                <YAxis allowDecimals={false} tick={axisTick} />
+                <Tooltip {...tooltipStyle} />
+                <Legend wrapperStyle={legendStyle} />
                 <Bar dataKey="daysCompleted" name="Cumplidos" fill="#10B981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="daysScheduled" name="Programados" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="daysScheduled" name="Programados" fill="#71717a" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -73,17 +82,17 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Línea de productividad</h2>
-          <p className="text-xs text-slate-500 mb-3">Tareas y hábitos completados por día (últimos 7 días).</p>
+          <p className="text-xs text-neutral-400 mb-3">Tareas y hábitos completados por día (últimos 7 días).</p>
           {productivity.length === 0 ? (
             <EmptyState />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={productivity}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="completedCount" name="Completadas" stroke="#6366F1" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                <XAxis dataKey="date" tick={axisTick} />
+                <YAxis allowDecimals={false} tick={axisTick} />
+                <Tooltip {...tooltipStyle} />
+                <Line type="monotone" dataKey="completedCount" name="Completadas" stroke="#818cf8" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -91,7 +100,7 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Distribución por categoría</h2>
-          <p className="text-xs text-slate-500 mb-3">Tareas completadas este mes, por color/categoría.</p>
+          <p className="text-xs text-neutral-400 mb-3">Tareas completadas este mes, por color/categoría.</p>
           {taskCategories.length === 0 ? (
             <EmptyState />
           ) : (
@@ -110,7 +119,7 @@ export default function ReportsPage() {
                     <Cell key={idx} fill={slice.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip {...tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -118,7 +127,7 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Ahorro real vs. planificado</h2>
-          <p className="text-xs text-slate-500 mb-3">Meta del mes vs. lo depositado en el fondo.</p>
+          <p className="text-xs text-neutral-400 mb-3">Meta del mes vs. lo depositado en el fondo.</p>
           {savingsComparison && (savingsComparison.planned > 0 || savingsComparison.real > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
@@ -127,12 +136,12 @@ export default function ReportsPage() {
                   { name: "Ahorro Real", value: savingsComparison.real },
                 ]}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridStroke} />
+                <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 12 }} />
+                <YAxis tick={axisTick} />
+                <Tooltip {...tooltipStyle} />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  <Cell fill="#94A3B8" />
+                  <Cell fill="#71717a" />
                   <Cell fill="#10B981" />
                 </Bar>
               </BarChart>
@@ -144,7 +153,7 @@ export default function ReportsPage() {
 
         <Card className="lg:col-span-2">
           <h2 className="font-semibold mb-1">Gastos por categoría</h2>
-          <p className="text-xs text-slate-500 mb-3">Desglose de tu gasto mensual, de mayor a menor.</p>
+          <p className="text-xs text-neutral-400 mb-3">Desglose de tu gasto mensual, de mayor a menor.</p>
           {expenseCategories.length === 0 ? (
             <EmptyState />
           ) : (
@@ -163,8 +172,11 @@ export default function ReportsPage() {
                     <Cell key={idx} fill={slice.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => Number(value).toLocaleString("es-CL", { style: "currency", currency: "CLP" })} />
-                <Legend />
+                <Tooltip
+                  {...tooltipStyle}
+                  formatter={(value: any) => Number(value).toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
+                />
+                <Legend wrapperStyle={legendStyle} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -175,5 +187,5 @@ export default function ReportsPage() {
 }
 
 function EmptyState() {
-  return <p className="text-sm text-slate-400 py-10 text-center">Aún no hay datos suficientes para este gráfico.</p>;
+  return <p className="text-sm text-neutral-500 py-10 text-center">Aún no hay datos suficientes para este gráfico.</p>;
 }

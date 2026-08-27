@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
 body {
-  @apply bg-slate-50 text-slate-900;
+  @apply bg-neutral-950 text-white;
+}
+
+/* Recharts draws pie/axis labels with a dark fill by default; force them
+   light so they stay legible on the app's dark background. */
+.recharts-text,
+.recharts-pie-label-text,
+.recharts-cartesian-axis-tick-value {
+  fill: #d4d4d4;
+}
+.recharts-legend-item-text {
+  color: #d4d4d4 !important;
 }

@@ -29,10 +29,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-center mb-1">Crear cuenta</h1>
-        <p className="text-sm text-slate-500 text-center mb-6">Empieza a organizar tu vida</p>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
+      <div className="w-full max-w-sm bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm p-8">
+        <h1 className="text-2xl font-bold text-center mb-1 text-white">Crear cuenta</h1>
+        <p className="text-sm text-neutral-400 text-center mb-6">Empieza a organizar tu vida</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input placeholder="Nombre" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -44,12 +44,12 @@ export default function RegisterPage() {
             required
             minLength={6}
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-400">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creando..." : "Crear cuenta"}
           </Button>
         </form>
-        <p className="text-sm text-center text-slate-500 mt-4">
+        <p className="text-sm text-center text-neutral-400 mt-4">
           ¿Ya tienes cuenta? <Link to="/login" className="text-indigo-600 font-medium">Inicia sesión</Link>
         </p>
       </div>

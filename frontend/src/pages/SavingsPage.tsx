@@ -75,8 +75,8 @@ export default function SavingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
-          <p className="text-sm text-slate-500">Fondo de ahorro intocable</p>
-          <p className="text-3xl font-bold text-emerald-600 mb-4">{wallet ? money(wallet.savingsFund) : "—"}</p>
+          <p className="text-sm text-neutral-400">Fondo de ahorro intocable</p>
+          <p className="text-3xl font-bold text-emerald-400 mb-4">{wallet ? money(wallet.savingsFund) : "—"}</p>
           <form onSubmit={handleAllocate} className="flex gap-2">
             <Input
               type="number"
@@ -86,14 +86,14 @@ export default function SavingsPage() {
             />
             <Button type="submit">Apartar</Button>
           </form>
-          <p className="text-xs text-slate-400 mt-2">
+          <p className="text-xs text-neutral-500 mt-2">
             Saldo disponible actual: {wallet ? money(wallet.balance) : "—"}
           </p>
         </Card>
 
         <Card>
           <h2 className="font-semibold mb-2">Meta de ahorro del mes</h2>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-neutral-400 mb-3">
             Define cuánto planeas ahorrar este mes (se usa para comparar en Reportes).
           </p>
           <form onSubmit={handleSavePlan} className="flex gap-2">
@@ -105,14 +105,14 @@ export default function SavingsPage() {
             />
             <Button type="submit">Guardar</Button>
           </form>
-          {planSaved && <p className="text-xs text-emerald-600 mt-2">Meta guardada ✓</p>}
+          {planSaved && <p className="text-xs text-emerald-400 mt-2">Meta guardada ✓</p>}
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <h2 className="font-semibold mb-3">Calculadora de proyección</h2>
-          <p className="text-xs text-slate-500 mb-3">Monto mensual × plazo = total proyectado.</p>
+          <p className="text-xs text-neutral-400 mb-3">Monto mensual × plazo = total proyectado.</p>
           <form onSubmit={handleProjection} className="space-y-2">
             <Input type="number" placeholder="Monto mensual" value={projMonthly} onChange={(e) => setProjMonthly(e.target.value)} />
             <Input type="number" placeholder="Plazo en meses" value={projMonths} onChange={(e) => setProjMonths(e.target.value)} />
@@ -127,7 +127,7 @@ export default function SavingsPage() {
 
         <Card>
           <h2 className="font-semibold mb-3">Calculadora de cuota</h2>
-          <p className="text-xs text-slate-500 mb-3">Meta total ÷ plazo = cuota mensual necesaria.</p>
+          <p className="text-xs text-neutral-400 mb-3">Meta total ÷ plazo = cuota mensual necesaria.</p>
           <form onSubmit={handleQuota} className="space-y-2">
             <Input type="number" placeholder="Meta total" value={quotaTarget} onChange={(e) => setQuotaTarget(e.target.value)} />
             <Input type="number" placeholder="Plazo en meses" value={quotaMonths} onChange={(e) => setQuotaMonths(e.target.value)} />
@@ -143,12 +143,12 @@ export default function SavingsPage() {
 
       <Card>
         <h2 className="font-semibold mb-3">Movimientos de ahorro</h2>
-        {movements.length === 0 && <p className="text-sm text-slate-400">Sin movimientos todavía.</p>}
-        <ul className="divide-y divide-slate-100">
+        {movements.length === 0 && <p className="text-sm text-neutral-500">Sin movimientos todavía.</p>}
+        <ul className="divide-y divide-neutral-800">
           {movements.map((m) => (
             <li key={m.id} className="py-2 flex justify-between text-sm">
               <span>{new Date(m.date).toLocaleDateString("es-CL")}</span>
-              <span className="font-semibold text-emerald-600">+{money(m.amount)}</span>
+              <span className="font-semibold text-emerald-400">+{money(m.amount)}</span>
             </li>
           ))}
         </ul>

@@ -44,8 +44,8 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 bg-slate-900 text-slate-100 flex flex-col">
-        <div className="px-5 py-5 text-xl font-bold tracking-tight">TaskFlow</div>
+      <aside className="w-60 shrink-0 bg-black text-neutral-200 flex flex-col">
+        <div className="px-5 py-5 text-xl font-bold tracking-tight text-white">TaskFlow</div>
         <nav className="flex-1 px-2 space-y-1">
           {navItems.map((item) => (
             <NavLink
@@ -54,7 +54,7 @@ export default function Layout() {
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  isActive ? "bg-indigo-600 text-white" : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
                 }`
               }
             >
@@ -63,19 +63,19 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="px-4 py-4 border-t border-slate-800 text-sm">
-          <div className="font-medium truncate">{user?.displayName}</div>
-          <button onClick={handleLogout} className="mt-2 text-slate-400 hover:text-white text-xs">
+        <div className="px-4 py-4 border-t border-neutral-800 text-sm">
+          <div className="font-medium truncate text-white">{user?.displayName}</div>
+          <button onClick={handleLogout} className="mt-2 text-neutral-500 hover:text-white text-xs">
             Cerrar sesión
           </button>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-end px-6 relative">
+        <header className="h-14 border-b border-neutral-800 bg-neutral-900 flex items-center justify-end px-6 relative">
           <button
             onClick={() => setShowNotifications((s) => !s)}
-            className="relative rounded-full p-2 hover:bg-slate-100"
+            className="relative rounded-full p-2 hover:bg-neutral-800"
             aria-label="Notificaciones"
           >
             🔔
@@ -86,9 +86,9 @@ export default function Layout() {
             )}
           </button>
           {showNotifications && (
-            <div className="absolute right-6 top-14 w-80 max-h-96 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg z-20">
+            <div className="absolute right-6 top-14 w-80 max-h-96 overflow-y-auto bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg shadow-black/40 z-20">
               {notifications.length === 0 && (
-                <div className="p-4 text-sm text-slate-500">Sin notificaciones por ahora.</div>
+                <div className="p-4 text-sm text-neutral-400">Sin notificaciones por ahora.</div>
               )}
               {notifications.map((n) => (
                 <button
@@ -99,12 +99,12 @@ export default function Layout() {
                       loadNotifications();
                     }
                   }}
-                  className={`w-full text-left px-4 py-3 text-sm border-b border-slate-100 last:border-0 hover:bg-slate-50 ${
-                    n.isRead ? "text-slate-400" : "text-slate-800 font-medium"
+                  className={`w-full text-left px-4 py-3 text-sm border-b border-neutral-800 last:border-0 hover:bg-neutral-800 ${
+                    n.isRead ? "text-neutral-500" : "text-white font-medium"
                   }`}
                 >
                   {n.message}
-                  <div className="text-[11px] text-slate-400 mt-1">
+                  <div className="text-[11px] text-neutral-500 mt-1">
                     {new Date(n.createdAt).toLocaleString()}
                   </div>
                 </button>
@@ -112,7 +112,7 @@ export default function Layout() {
             </div>
           )}
         </header>
-        <main className="flex-1 p-6 bg-slate-50">
+        <main className="flex-1 p-6 bg-neutral-950">
           <Outlet />
         </main>
       </div>

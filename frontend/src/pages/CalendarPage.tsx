@@ -52,7 +52,7 @@ export default function CalendarPage() {
       </div>
 
       <Card>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-400 mb-2">
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-neutral-500 mb-2">
           {weekDayLabels.map((d) => (
             <div key={d}>{d}</div>
           ))}
@@ -61,22 +61,22 @@ export default function CalendarPage() {
           {cells.map((cell, idx) => (
             <div
               key={idx}
-              className={`min-h-24 rounded-lg border border-slate-100 p-1.5 ${
-                cell.day ? "bg-slate-50" : "bg-transparent border-transparent"
+              className={`min-h-24 rounded-lg border border-neutral-800 p-1.5 ${
+                cell.day ? "bg-neutral-950" : "bg-transparent border-transparent"
               }`}
             >
               {cell.day && (
                 <>
-                  <div className="text-xs font-medium text-slate-500 mb-1">{cell.day}</div>
+                  <div className="text-xs font-medium text-neutral-400 mb-1">{cell.day}</div>
                   <div className="space-y-0.5">
                     {cell.items.slice(0, 3).map((it) => (
-                      <div key={it.id} className="flex items-center gap-1 text-[10px] truncate" title={it.title}>
+                      <div key={it.id} className="flex items-center gap-1 text-[10px] truncate text-neutral-200" title={it.title}>
                         <ColorDot color={it.categoryColor ?? "#94A3B8"} />
                         <span className="truncate">{it.title}</span>
                       </div>
                     ))}
                     {cell.items.length > 3 && (
-                      <div className="text-[10px] text-slate-400">+{cell.items.length - 3} más</div>
+                      <div className="text-[10px] text-neutral-500">+{cell.items.length - 3} más</div>
                     )}
                   </div>
                 </>
