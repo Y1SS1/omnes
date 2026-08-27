@@ -45,30 +45,42 @@ export default function CalendarPage() {
     <div>
       <PageTitle title="Calendario" subtitle="Vista mensual de tus tareas y hábitos, codificados por color." />
 
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="secondary" onClick={() => changeMonth(-1)}>← Anterior</Button>
-        <h2 className="font-semibold text-lg">{monthNames[month - 1]} {year}</h2>
-        <Button variant="secondary" onClick={() => changeMonth(1)}>Siguiente →</Button>
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <Button variant="secondary" onClick={() => changeMonth(-1)}>
+          <span className="hidden sm:inline">← Anterior</span>
+          <span className="sm:hidden">←</span>
+        </Button>
+        <h2 className="font-semibold text-base sm:text-lg text-center truncate">{monthNames[month - 1]} {year}</h2>
+        <Button variant="secondary" onClick={() => changeMonth(1)}>
+          <span className="hidden sm:inline">Siguiente →</span>
+          <span className="sm:hidden">→</span>
+        </Button>
       </div>
 
       <Card>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-neutral-500 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs font-medium text-neutral-500 mb-2">
           {weekDayLabels.map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {cells.map((cell, idx) => (
             <div
               key={idx}
-              className={`min-h-24 rounded-lg border border-neutral-800 p-1.5 ${
+              className={`min-h-14 sm:min-h-24 rounded-md sm:rounded-lg border border-neutral-800 p-0.5 sm:p-1.5 overflow-hidden ${
                 cell.day ? "bg-neutral-950" : "bg-transparent border-transparent"
               }`}
             >
               {cell.day && (
                 <>
-                  <div className="text-xs font-medium text-neutral-400 mb-1">{cell.day}</div>
-                  <div className="space-y-0.5">
+                  <div className="text-[10px] sm:text-xs font-medium text-neutral-400 mb-0.5 sm:mb-1">{cell.day}</div>
+                  {/* Small screens: just colored dots (still spec-compliant - US-08 allows dots or titles). */}
+                  <div className="flex flex-wrap gap-0.5 sm:hidden">
+                    {cell.items.slice(0, 4).map((it) => (
+                      <ColorDot key={it.id} color={it.categoryColor ?? "#94A3B8"} />
+                    ))}
+                  </div>
+                  <div className="hidden sm:block space-y-0.5">
                     {cell.items.slice(0, 3).map((it) => (
                       <div key={it.id} className="flex items-center gap-1 text-[10px] truncate text-neutral-200" title={it.title}>
                         <ColorDot color={it.categoryColor ?? "#94A3B8"} />

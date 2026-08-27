@@ -76,7 +76,7 @@ export default function WalletPage() {
           <p className="text-3xl font-bold mb-4">
             {wallet ? wallet.balance.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
             <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
               Ajustar saldo
@@ -100,14 +100,14 @@ export default function WalletPage() {
             <li key={t.id} className="py-3 flex items-center gap-3">
               {t.categoryColor && <ColorDot color={t.categoryColor} />}
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-neutral-100">
+                <div className="text-sm font-medium text-neutral-100 truncate">
                   {t.categoryName ?? "Sin categoría"} {t.description && `· ${t.description}`}
                 </div>
                 <div className="text-xs text-neutral-500">
                   {new Date(t.date).toLocaleDateString("es-CL", { dateStyle: "medium" })}
                 </div>
               </div>
-              <div className={`text-sm font-semibold ${t.type === "Income" ? "text-emerald-400" : "text-red-500"}`}>
+              <div className={`text-sm font-semibold shrink-0 whitespace-nowrap ${t.type === "Income" ? "text-emerald-400" : "text-red-500"}`}>
                 {t.type === "Income" ? "+" : "-"}
                 {t.amount.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
               </div>

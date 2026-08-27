@@ -73,13 +73,13 @@ export default function TasksPage() {
     <div>
       <PageTitle title="Tareas" subtitle="Organiza tus pendientes por plazo: hoy, esta semana o este mes." />
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex gap-2 flex-wrap">
           {scopes.map((s) => (
             <button
               key={s.value}
               onClick={() => setScope(s.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium ${
                 scope === s.value ? "bg-indigo-600 text-white" : "bg-neutral-900 border border-neutral-800 text-neutral-300"
               }`}
             >

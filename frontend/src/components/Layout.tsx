@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as notificationsApi from "../api/notifications";
 import type { NotificationDto } from "../api/types";
@@ -18,8 +18,10 @@ const navItems = [
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const loadNotifications = async () => {
     try {
@@ -35,6 +37,11 @@ export default function Layout() {
     return () => clearInterval(interval);
   }, []);
 
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
@@ -44,9 +51,30 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-60 shrink-0 bg-black text-neutral-200 flex flex-col">
-        <div className="px-5 py-5 text-xl font-bold tracking-tight text-white">TaskFlow</div>
-        <nav className="flex-1 px-2 space-y-1">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 md:w-60 shrink-0 bg-black text-neutral-200 flex flex-col transition-transform duration-200 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="px-5 py-5 flex items-center justify-between">
+          <span className="text-xl font-bold tracking-tight text-white">TaskFlow</span>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden text-neutral-400 hover:text-white p-1"
+            aria-label="Cerrar menú"
+          >
+            ✕
+          </button>
+        </div>
+        <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -72,7 +100,15 @@ export default function Layout() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 border-b border-neutral-800 bg-neutral-900 flex items-center justify-end px-6 relative">
+        <header className="h-14 border-b border-neutral-800 bg-neutral-900 flex items-center justify-between px-4 md:px-6 relative">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="md:hidden text-neutral-300 hover:text-white p-2 -ml-2"
+            aria-label="Abrir menú"
+          >
+            ☰
+          </button>
+          <span className="md:hidden font-semibold text-white">TaskFlow</span>
           <button
             onClick={() => setShowNotifications((s) => !s)}
             className="relative rounded-full p-2 hover:bg-neutral-800"
@@ -86,7 +122,7 @@ export default function Layout() {
             )}
           </button>
           {showNotifications && (
-            <div className="absolute right-6 top-14 w-80 max-h-96 overflow-y-auto bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg shadow-black/40 z-20">
+            <div className="absolute right-4 md:right-6 top-14 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg shadow-black/40 z-20">
               {notifications.length === 0 && (
                 <div className="p-4 text-sm text-neutral-400">Sin notificaciones por ahora.</div>
               )}
@@ -112,7 +148,7 @@ export default function Layout() {
             </div>
           )}
         </header>
-        <main className="flex-1 p-6 bg-neutral-950">
+        <main className="flex-1 p-4 md:p-6 bg-neutral-950 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

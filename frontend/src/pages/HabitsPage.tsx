@@ -84,10 +84,12 @@ export default function HabitsPage() {
               >
                 {h.habitCheckedToday ? "✓" : ""}
               </button>
-              <span className={`text-sm flex-1 ${h.habitCheckedToday ? "line-through text-neutral-500" : "text-neutral-100"}`}>
+              <span className={`text-sm flex-1 min-w-0 truncate ${h.habitCheckedToday ? "line-through text-neutral-500" : "text-neutral-100"}`}>
                 {h.title}
               </span>
-              <span className="text-[11px] text-neutral-500">{h.repeatDays}</span>
+              <span className="hidden md:inline text-[11px] text-neutral-500 shrink-0 max-w-[10rem] truncate" title={h.repeatDays}>
+                {h.repeatDays}
+              </span>
               <button onClick={() => removeHabit(h.id)} className="text-neutral-600 hover:text-red-500 text-sm">
                 ✕
               </button>
