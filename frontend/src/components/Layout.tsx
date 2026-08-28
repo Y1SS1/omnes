@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Logo } from "./Logo";
 import * as notificationsApi from "../api/notifications";
@@ -61,10 +61,10 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-neutral-800 bg-neutral-900 px-4 md:px-6 relative">
         <div className="h-16 flex items-center gap-4">
-          <div className="flex items-center gap-2 shrink-0">
+          <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
             <Logo width={28} height={28} />
             <span className="text-lg font-bold tracking-tight text-white hidden sm:inline">Omnes</span>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 min-w-0 ml-36">
             {navItems.map((item) => (
