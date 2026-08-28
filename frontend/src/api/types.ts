@@ -64,11 +64,22 @@ export interface BudgetProgressDto {
   color: "green" | "yellow" | "red";
 }
 
+export interface SavingsGoalDto {
+  id: string;
+  name: string;
+  targetAmount: number;
+  targetMonths: number;
+  monthlyQuota: number;
+  savedAmount: number;
+  createdAt: string;
+}
+
 export interface SavingsMovementDto {
   id: string;
   amount: number;
   date: string;
   note: string | null;
+  savingsGoalId: string | null;
 }
 
 export interface NotificationDto {

@@ -1,149 +1,203 @@
 import { useEffect, useState } from "react";
 import * as savingsApi from "../api/savings";
 import * as walletApi from "../api/wallet";
-import type { SavingsMovementDto, WalletDto } from "../api/types";
-import { Button, Card, Input, PageTitle } from "../components/ui";
+import type { SavingsGoalDto, SavingsMovementDto, WalletDto } from "../api/types";
+import { Button, Card, Input, Modal, PageTitle, ProgressBar, Select } from "../components/ui";
 import { MoneyField } from "../components/money";
 import { useCurrency } from "../context/CurrencyContext";
 
+function errorMessage(err: unknown): string {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  if (typeof data === "string" && data) return data;
+  return "No se pudo completar la operación. Intenta de nuevo.";
+}
+
 export default function SavingsPage() {
   const { formatMoney } = useCurrency();
-  const now = new Date();
   const [wallet, setWallet] = useState<WalletDto | null>(null);
+  const [goals, setGoals] = useState<SavingsGoalDto[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [movements, setMovements] = useState<SavingsMovementDto[]>([]);
 
+  const [newGoalModalOpen, setNewGoalModalOpen] = useState(false);
+  const [goalName, setGoalName] = useState("");
+  const [goalTarget, setGoalTarget] = useState<number | null>(null);
+  const [goalMonths, setGoalMonths] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
   const [allocateAmount, setAllocateAmount] = useState<number | null>(null);
-  const [planAmount, setPlanAmount] = useState<number | null>(null);
-  const [planSaved, setPlanSaved] = useState(false);
 
-  const [projMonthly, setProjMonthly] = useState<number | null>(null);
-  const [projMonths, setProjMonths] = useState("");
-  const [projResult, setProjResult] = useState<number | null>(null);
+  const selectedGoal = goals.find((g) => g.id === selectedGoalId) ?? null;
 
-  const [quotaTarget, setQuotaTarget] = useState<number | null>(null);
-  const [quotaMonths, setQuotaMonths] = useState("");
-  const [quotaResult, setQuotaResult] = useState<number | null>(null);
-
-  const load = async () => {
-    const [w, m] = await Promise.all([walletApi.getWallet(), savingsApi.getSavingsMovements()]);
-    setWallet(w);
-    setMovements(m);
+  const loadGoals = async (keepSelection = true) => {
+    const list = await savingsApi.getSavingsGoals();
+    setGoals(list);
+    if (!keepSelection || (selectedGoalId && !list.some((g) => g.id === selectedGoalId))) {
+      setSelectedGoalId(list[0]?.id ?? null);
+    } else if (!selectedGoalId && list.length > 0) {
+      setSelectedGoalId(list[0].id);
+    }
   };
 
+  const loadWallet = async () => setWallet(await walletApi.getWallet());
+
   useEffect(() => {
-    load();
+    loadGoals(false);
+    loadWallet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (selectedGoalId) {
+      savingsApi.getSavingsMovements(selectedGoalId).then(setMovements);
+    } else {
+      setMovements([]);
+    }
+  }, [selectedGoalId]);
+
+  const handleCreateGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const months = Number(goalMonths);
+    if (!goalName.trim() || goalTarget === null || goalTarget <= 0 || !months || months <= 0) return;
+    setFormError(null);
+    try {
+      const goal = await savingsApi.createSavingsGoal(goalName.trim(), goalTarget, months);
+      setGoalName("");
+      setGoalTarget(null);
+      setGoalMonths("");
+      setNewGoalModalOpen(false);
+      await loadGoals();
+      setSelectedGoalId(goal.id);
+    } catch (err) {
+      setFormError(errorMessage(err));
+    }
+  };
+
+  const handleDeleteGoal = async () => {
+    if (!selectedGoal) return;
+    if (!window.confirm(`¿Borrar la meta "${selectedGoal.name}"? El dinero ya apartado se mantiene en tu fondo, solo deja de estar etiquetado con esta meta.`)) {
+      return;
+    }
+    await savingsApi.deleteSavingsGoal(selectedGoal.id);
+    await loadGoals(false);
+  };
 
   const handleAllocate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (allocateAmount === null || allocateAmount <= 0) return;
-    await savingsApi.allocateSavings(allocateAmount);
-    setAllocateAmount(null);
-    load();
-  };
-
-  const handleSavePlan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (planAmount === null || planAmount <= 0) return;
-    await savingsApi.setSavingsPlan(now.getFullYear(), now.getMonth() + 1, planAmount);
-    setPlanSaved(true);
-    setTimeout(() => setPlanSaved(false), 2000);
-  };
-
-  const handleProjection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const months = Number(projMonths);
-    if (!projMonthly || !months) return;
-    const result = await savingsApi.getProjection(projMonthly, months);
-    setProjResult(result.projectedTotal);
-  };
-
-  const handleQuota = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const months = Number(quotaMonths);
-    if (!quotaTarget || !months) return;
-    const result = await savingsApi.getQuota(quotaTarget, months);
-    setQuotaResult(result.monthlyQuota);
+    setFormError(null);
+    try {
+      await savingsApi.allocateSavings(allocateAmount, selectedGoalId);
+      setAllocateAmount(null);
+      await Promise.all([loadGoals(), loadWallet()]);
+      if (selectedGoalId) setMovements(await savingsApi.getSavingsMovements(selectedGoalId));
+    } catch (err) {
+      setFormError(errorMessage(err));
+    }
   };
 
   return (
     <div>
-      <PageTitle title="Ahorros" subtitle="Separa dinero intocable y proyecta tus metas." />
+      <PageTitle title="Ahorros" subtitle="Crea metas de ahorro con nombre y sigue el progreso de cada una." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <p className="text-sm text-neutral-400">Fondo de ahorro intocable</p>
-          <p className="text-3xl font-bold text-emerald-400 mb-4">{wallet ? formatMoney(wallet.savingsFund) : "—"}</p>
-          <form onSubmit={handleAllocate} className="flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[10rem]">
-              <MoneyField value={allocateAmount} onChange={setAllocateAmount} placeholder="Monto a apartar este mes" />
-            </div>
-            <Button type="submit">Apartar</Button>
-          </form>
-          <p className="text-xs text-neutral-500 mt-2">
-            Saldo disponible actual: {wallet ? formatMoney(wallet.balance) : "—"}
-          </p>
-        </Card>
-
-        <Card>
-          <h2 className="font-semibold mb-2">Meta de ahorro del mes</h2>
-          <p className="text-xs text-neutral-400 mb-3">
-            Define cuánto planeas ahorrar este mes (se usa para comparar en Reportes).
-          </p>
-          <form onSubmit={handleSavePlan} className="flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[10rem]">
-              <MoneyField value={planAmount} onChange={setPlanAmount} placeholder="Meta planificada" />
-            </div>
-            <Button type="submit">Guardar</Button>
-          </form>
-          {planSaved && <p className="text-xs text-emerald-400 mt-2">Meta guardada ✓</p>}
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <h2 className="font-semibold mb-3">Calculadora de proyección</h2>
-          <p className="text-xs text-neutral-400 mb-3">Monto mensual × plazo = total proyectado.</p>
-          <form onSubmit={handleProjection} className="space-y-2">
-            <MoneyField value={projMonthly} onChange={setProjMonthly} placeholder="Monto mensual" />
-            <Input type="number" placeholder="Plazo en meses" value={projMonths} onChange={(e) => setProjMonths(e.target.value)} />
-            <Button type="submit" className="w-full">Calcular</Button>
-          </form>
-          {projResult !== null && (
-            <p className="text-sm mt-3">
-              Tendrás <span className="font-semibold">{formatMoney(projResult)}</span> acumulados.
-            </p>
-          )}
-        </Card>
-
-        <Card>
-          <h2 className="font-semibold mb-3">Calculadora de cuota</h2>
-          <p className="text-xs text-neutral-400 mb-3">Meta total ÷ plazo = cuota mensual necesaria.</p>
-          <form onSubmit={handleQuota} className="space-y-2">
-            <MoneyField value={quotaTarget} onChange={setQuotaTarget} placeholder="Meta total" />
-            <Input type="number" placeholder="Plazo en meses" value={quotaMonths} onChange={(e) => setQuotaMonths(e.target.value)} />
-            <Button type="submit" className="w-full">Calcular</Button>
-          </form>
-          {quotaResult !== null && (
-            <p className="text-sm mt-3">
-              Debes ahorrar <span className="font-semibold">{formatMoney(quotaResult)}</span> cada mes.
-            </p>
-          )}
-        </Card>
-      </div>
-
-      <Card>
-        <h2 className="font-semibold mb-3">Movimientos de ahorro</h2>
-        {movements.length === 0 && <p className="text-sm text-neutral-500">Sin movimientos todavía.</p>}
-        <ul className="divide-y divide-neutral-800">
-          {movements.map((m) => (
-            <li key={m.id} className="py-2 flex justify-between text-sm">
-              <span>{new Date(m.date).toLocaleDateString("es-CL")}</span>
-              <span className="font-semibold text-emerald-400">+{formatMoney(m.amount)}</span>
-            </li>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-6">
+        <Select
+          value={selectedGoalId ?? ""}
+          onChange={(e) => setSelectedGoalId(e.target.value || null)}
+          className="max-w-xs"
+        >
+          {goals.length === 0 && <option value="">Sin metas todavía</option>}
+          {goals.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
           ))}
-        </ul>
-      </Card>
+        </Select>
+        <Button onClick={() => setNewGoalModalOpen(true)}>+ Nueva meta</Button>
+      </div>
+
+      {!selectedGoal ? (
+        <Card>
+          <p className="text-sm text-neutral-400">
+            Todavía no tienes ninguna meta de ahorro. Crea la primera con "+ Nueva meta" — por ejemplo, "Cambio de
+            maquinaria", con el monto que necesitas y en cuántos meses quieres lograrlo.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <Card className="mb-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold text-white">{selectedGoal.name}</h2>
+              <button onClick={handleDeleteGoal} className="text-neutral-600 hover:text-red-500 text-sm shrink-0">
+                Borrar meta
+              </button>
+            </div>
+
+            <ProgressBar
+              percent={(selectedGoal.savedAmount / selectedGoal.targetAmount) * 100}
+              color="green"
+            />
+            <p className="text-sm text-neutral-400 mt-2">
+              Ahorrado <span className="font-semibold text-white">{formatMoney(selectedGoal.savedAmount)}</span> de{" "}
+              {formatMoney(selectedGoal.targetAmount)} (
+              {Math.min(100, Math.round((selectedGoal.savedAmount / selectedGoal.targetAmount) * 100))}%)
+            </p>
+            <p className="text-sm text-neutral-400 mt-1">
+              Necesitas ahorrar <span className="font-semibold text-white">{formatMoney(selectedGoal.monthlyQuota)}</span> al
+              mes durante {selectedGoal.targetMonths} {selectedGoal.targetMonths === 1 ? "mes" : "meses"} para llegar a la meta.
+            </p>
+
+            <form onSubmit={handleAllocate} className="flex flex-wrap gap-2 mt-4">
+              <div className="flex-1 min-w-[10rem]">
+                <MoneyField value={allocateAmount} onChange={setAllocateAmount} placeholder="Monto a apartar" />
+              </div>
+              <Button type="submit">Apartar</Button>
+            </form>
+            {formError && <p className="text-sm text-red-400 mt-2">{formError}</p>}
+            <p className="text-xs text-neutral-500 mt-2">
+              Saldo disponible actual: {wallet ? formatMoney(wallet.balance) : "—"} · Fondo total (todas las metas):{" "}
+              {wallet ? formatMoney(wallet.savingsFund) : "—"}
+            </p>
+          </Card>
+
+          <Card>
+            <h2 className="font-semibold mb-3">Movimientos de "{selectedGoal.name}"</h2>
+            {movements.length === 0 ? (
+              <p className="text-sm text-neutral-500">Sin movimientos todavía para esta meta.</p>
+            ) : (
+              <ul className="divide-y divide-neutral-800">
+                {movements.map((m) => (
+                  <li key={m.id} className="py-2 flex justify-between text-sm">
+                    <span className="text-neutral-400">{new Date(m.date).toLocaleDateString("es-CL")}</span>
+                    <span className="font-semibold text-emerald-400">+{formatMoney(m.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </>
+      )}
+
+      <Modal open={newGoalModalOpen} onClose={() => { setNewGoalModalOpen(false); setFormError(null); }} title="Nueva meta de ahorro">
+        <form onSubmit={handleCreateGoal} className="space-y-3">
+          <Input
+            placeholder='Motivo, ej: "Cambio de maquinaria"'
+            value={goalName}
+            onChange={(e) => setGoalName(e.target.value)}
+            required
+          />
+          <MoneyField value={goalTarget} onChange={setGoalTarget} placeholder="¿Cuánto quieres ahorrar?" required />
+          <Input
+            type="number"
+            placeholder="¿En cuántos meses?"
+            value={goalMonths}
+            onChange={(e) => setGoalMonths(e.target.value)}
+            required
+          />
+          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          <Button type="submit" className="w-full">Crear meta</Button>
+        </form>
+      </Modal>
     </div>
   );
 }

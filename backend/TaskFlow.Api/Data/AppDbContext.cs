@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<SavingsMovement> SavingsMovements => Set<SavingsMovement>();
     public DbSet<SavingsPlan> SavingsPlans => Set<SavingsPlan>();
+    public DbSet<SavingsGoal> SavingsGoals => Set<SavingsGoal>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -71,11 +72,21 @@ public class AppDbContext : DbContext
                 .HasForeignKey(b => b.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<SavingsGoal>(e =>
+        {
+            e.Property(s => s.TargetAmount).HasPrecision(14, 2);
+            e.HasOne(s => s.User).WithMany()
+                .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<SavingsMovement>(e =>
         {
             e.Property(s => s.Amount).HasPrecision(14, 2);
             e.HasOne(s => s.User).WithMany(u => u.SavingsMovements)
                 .HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            // Deleting a goal un-labels its movements instead of deleting the money.
+            e.HasOne(s => s.SavingsGoal).WithMany(g => g.Movements)
+                .HasForeignKey(s => s.SavingsGoalId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<SavingsPlan>(e =>

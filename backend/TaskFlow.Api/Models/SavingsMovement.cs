@@ -10,4 +10,8 @@ public class SavingsMovement
     public decimal Amount { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public string? Note { get; set; }
+
+    // Which named goal this money was set aside for (null = not tied to a goal).
+    public Guid? SavingsGoalId { get; set; }
+    public SavingsGoal? SavingsGoal { get; set; }
 }

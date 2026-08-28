@@ -112,13 +112,15 @@ public class ReportsController : ControllerBase
         return grouped;
     }
 
-    // US-24: planned savings goal vs what was actually moved into the fund, for the given month.
+    // US-24: planned savings (sum of each active goal's required monthly quota)
+    // vs what was actually moved into the fund, for the given month.
     [HttpGet("savings-comparison")]
     public async Task<ActionResult<SavingsComparisonDto>> SavingsComparison([FromQuery] int year, [FromQuery] int month)
     {
-        var monthDate = new DateOnly(year, month, 1);
-        var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p =>
-            p.UserId == _currentUser.UserId && p.Month == monthDate);
+        var goals = await _db.SavingsGoals
+            .Where(g => g.UserId == _currentUser.UserId && g.TargetMonths > 0)
+            .ToListAsync();
+        var planned = goals.Sum(g => Math.Round(g.TargetAmount / g.TargetMonths, 2, MidpointRounding.AwayFromZero));
 
         var start = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
         var end = start.AddMonths(1);
@@ -126,7 +128,7 @@ public class ReportsController : ControllerBase
             .Where(s => s.UserId == _currentUser.UserId && s.Date >= start && s.Date < end)
             .SumAsync(s => s.Amount);
 
-        return new SavingsComparisonDto(plan?.PlannedAmount ?? 0, real);
+        return new SavingsComparisonDto(planned, real);
     }
 
     // US-25: expenses broken down by category, for the given month, largest first.
