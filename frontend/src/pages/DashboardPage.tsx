@@ -82,7 +82,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageTitle title="Centro personal" subtitle="Captura rápida de lo que sea: tarea, nota o gasto." />
+      <PageTitle title="Centro de control" subtitle="Captura rápida de lo que sea: tarea, nota o gasto." />
 
       <Card className="mb-6">
         <form onSubmit={handleQuickCapture} className="flex flex-col sm:flex-row gap-3">
