@@ -42,4 +42,23 @@ public class NotificationsController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var n = await _db.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == _currentUser.UserId);
+        if (n is null) return NotFound();
+        _db.Notifications.Remove(n);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAll()
+    {
+        var items = await _db.Notifications.Where(n => n.UserId == _currentUser.UserId).ToListAsync();
+        _db.Notifications.RemoveRange(items);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
 }

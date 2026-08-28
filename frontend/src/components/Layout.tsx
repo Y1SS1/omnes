@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Logo } from "./Logo";
 import * as notificationsApi from "../api/notifications";
 import type { NotificationDto } from "../api/types";
 
@@ -65,7 +66,10 @@ export default function Layout() {
         }`}
       >
         <div className="px-5 py-5 flex items-center justify-between">
-          <span className="text-xl font-bold tracking-tight text-white">TaskFlow</span>
+          <div className="flex items-center gap-2">
+            <Logo width={28} height={28} />
+            <span className="text-xl font-bold tracking-tight text-white">Omnes</span>
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="md:hidden text-neutral-400 hover:text-white p-1"
@@ -108,7 +112,10 @@ export default function Layout() {
           >
             ☰
           </button>
-          <span className="md:hidden font-semibold text-white">TaskFlow</span>
+          <span className="md:hidden flex items-center gap-2 font-semibold text-white">
+            <Logo width={20} height={20} />
+            Omnes
+          </span>
           <button
             onClick={() => setShowNotifications((s) => !s)}
             className="relative rounded-full p-2 hover:bg-neutral-800"
@@ -123,27 +130,51 @@ export default function Layout() {
           </button>
           {showNotifications && (
             <div className="absolute right-4 md:right-6 top-14 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg shadow-black/40 z-20">
-              {notifications.length === 0 && (
+              {notifications.length === 0 ? (
                 <div className="p-4 text-sm text-neutral-400">Sin notificaciones por ahora.</div>
+              ) : (
+                <div className="flex justify-end px-3 py-2 border-b border-neutral-800">
+                  <button
+                    onClick={async () => {
+                      await notificationsApi.clearNotifications();
+                      loadNotifications();
+                    }}
+                    className="text-xs text-neutral-400 hover:text-white"
+                  >
+                    Limpiar todas
+                  </button>
+                </div>
               )}
               {notifications.map((n) => (
-                <button
+                <div
                   key={n.id}
-                  onClick={async () => {
-                    if (!n.isRead) {
-                      await notificationsApi.markNotificationRead(n.id);
-                      loadNotifications();
-                    }
-                  }}
-                  className={`w-full text-left px-4 py-3 text-sm border-b border-neutral-800 last:border-0 hover:bg-neutral-800 ${
-                    n.isRead ? "text-neutral-500" : "text-white font-medium"
-                  }`}
+                  className="flex items-start gap-2 px-4 py-3 text-sm border-b border-neutral-800 last:border-0 hover:bg-neutral-800"
                 >
-                  {n.message}
-                  <div className="text-[11px] text-neutral-500 mt-1">
-                    {new Date(n.createdAt).toLocaleString()}
-                  </div>
-                </button>
+                  <button
+                    onClick={async () => {
+                      if (!n.isRead) {
+                        await notificationsApi.markNotificationRead(n.id);
+                        loadNotifications();
+                      }
+                    }}
+                    className={`flex-1 min-w-0 text-left ${n.isRead ? "text-neutral-500" : "text-white font-medium"}`}
+                  >
+                    {n.message}
+                    <div className="text-[11px] text-neutral-500 mt-1">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await notificationsApi.deleteNotification(n.id);
+                      loadNotifications();
+                    }}
+                    className="shrink-0 text-neutral-600 hover:text-red-500"
+                    aria-label="Borrar notificación"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           )}

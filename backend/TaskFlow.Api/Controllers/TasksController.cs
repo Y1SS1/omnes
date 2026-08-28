@@ -37,8 +37,9 @@ public class TasksController : ControllerBase
     }
 
     // US-03 / US-04 / US-05: repetitive habits scheduled for a given date, with today's check state.
+    // Pass all=true to list every habit regardless of the day (for managing/deleting ones not due today).
     [HttpGet("habits")]
-    public async Task<ActionResult<List<TaskDto>>> GetHabits([FromQuery] DateOnly? date)
+    public async Task<ActionResult<List<TaskDto>>> GetHabits([FromQuery] DateOnly? date, [FromQuery] bool all = false)
     {
         var targetDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -46,14 +47,14 @@ public class TasksController : ControllerBase
             .Where(t => t.UserId == _currentUser.UserId && t.IsRepetitive)
             .ToListAsync();
 
-        var scheduled = habits.Where(h => DaysOfWeekHelper.IsScheduledOn(h.RepeatDays, targetDate)).ToList();
-        var habitIds = scheduled.Select(h => h.Id).ToList();
+        var selected = all ? habits : habits.Where(h => DaysOfWeekHelper.IsScheduledOn(h.RepeatDays, targetDate)).ToList();
+        var habitIds = selected.Select(h => h.Id).ToList();
 
         var completions = await _db.HabitCompletions
             .Where(h => habitIds.Contains(h.TaskItemId) && h.Date == targetDate)
             .ToDictionaryAsync(h => h.TaskItemId, h => h.IsChecked);
 
-        return scheduled
+        return selected
             .OrderBy(h => h.CreatedAt)
             .Select(h => ToDto(h, completions.TryGetValue(h.Id, out var isChecked) && isChecked))
             .ToList();

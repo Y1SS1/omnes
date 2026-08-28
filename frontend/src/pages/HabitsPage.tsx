@@ -13,13 +13,18 @@ const dayLabels: Record<DayName, string> = {
   Sunday: "Dom",
 };
 
+// JS getDay(): 0=Sunday..6=Saturday, mapped to our day names.
+const JS_DAY_TO_NAME: DayName[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const todayName = JS_DAY_TO_NAME[new Date().getDay()];
+
 export default function HabitsPage() {
   const [habits, setHabits] = useState<TaskItemDto[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [selectedDays, setSelectedDays] = useState<Set<DayName>>(new Set(ALL_DAYS));
 
-  const load = async () => setHabits(await tasksApi.getHabits());
+  // Fetch every habit (not just today's) so ones scheduled for other days can still be seen/managed.
+  const load = async () => setHabits(await tasksApi.getHabits(undefined, true));
 
   useEffect(() => {
     load();
@@ -60,8 +65,11 @@ export default function HabitsPage() {
     load();
   };
 
-  const pending = habits.filter((h) => !h.habitCheckedToday);
-  const done = habits.filter((h) => h.habitCheckedToday);
+  const isToday = (h: TaskItemDto) => h.repeatDays.includes(todayName);
+  const todayHabits = habits.filter(isToday);
+  const otherHabits = habits.filter((h) => !isToday(h));
+  const pending = todayHabits.filter((h) => !h.habitCheckedToday);
+  const done = todayHabits.filter((h) => h.habitCheckedToday);
 
   return (
     <div>
@@ -71,8 +79,9 @@ export default function HabitsPage() {
         <Button onClick={() => setModalOpen(true)}>+ Nuevo hábito</Button>
       </div>
 
-      <Card>
-        {habits.length === 0 && <p className="text-sm text-neutral-500">No tienes hábitos programados para hoy.</p>}
+      <Card className="mb-6">
+        <h2 className="font-semibold mb-3">Hoy</h2>
+        {todayHabits.length === 0 && <p className="text-sm text-neutral-500">No tienes hábitos programados para hoy.</p>}
         <ul className="space-y-2">
           {[...pending, ...done].map((h) => (
             <li key={h.id} className="flex items-center gap-3 py-1">
@@ -96,6 +105,30 @@ export default function HabitsPage() {
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card>
+        <h2 className="font-semibold mb-1">Todos tus hábitos</h2>
+        <p className="text-xs text-neutral-400 mb-3">
+          Incluye los que no están programados para hoy — solo se pueden borrar aquí, no marcar.
+        </p>
+        {otherHabits.length === 0 ? (
+          <p className="text-sm text-neutral-500">No tienes otros hábitos programados para otros días.</p>
+        ) : (
+          <ul className="space-y-2">
+            {otherHabits.map((h) => (
+              <li key={h.id} className="flex items-center gap-3 py-1">
+                <span className="text-sm flex-1 min-w-0 truncate text-neutral-300">{h.title}</span>
+                <span className="text-[11px] text-neutral-500 shrink-0 max-w-[12rem] truncate" title={h.repeatDays}>
+                  {h.repeatDays}
+                </span>
+                <button onClick={() => removeHabit(h.id)} className="text-neutral-600 hover:text-red-500 text-sm">
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nuevo hábito repetitivo">

@@ -9,3 +9,11 @@ export async function getNotifications() {
 export async function markNotificationRead(id: string) {
   await api.post(`/notifications/${id}/read`);
 }
+
+export async function deleteNotification(id: string) {
+  await api.delete(`/notifications/${id}`);
+}
+
+export async function clearNotifications() {
+  await api.delete("/notifications");
+}

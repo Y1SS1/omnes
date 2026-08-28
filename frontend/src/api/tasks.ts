@@ -17,8 +17,11 @@ export async function getTasks(params?: { scope?: DeadlineScope; kind?: TaskKind
   return data;
 }
 
-export async function getHabits(date?: string) {
-  const { data } = await api.get<TaskItemDto[]>("/tasks/habits", { params: date ? { date } : undefined });
+export async function getHabits(date?: string, all?: boolean) {
+  const params: Record<string, string | boolean> = {};
+  if (date) params.date = date;
+  if (all) params.all = true;
+  const { data } = await api.get<TaskItemDto[]>("/tasks/habits", { params });
   return data;
 }
 
