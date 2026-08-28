@@ -18,7 +18,8 @@ public enum DeadlineScope
 public enum CategoryType
 {
     Task = 0,
-    Expense = 1
+    Expense = 1,
+    Income = 2
 }
 
 public enum TransactionType

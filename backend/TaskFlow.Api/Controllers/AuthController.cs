@@ -48,7 +48,12 @@ public class AuthController : ControllerBase
             new Category { UserId = user.Id, Name = "Transporte", Color = "#3B82F6", Type = CategoryType.Expense },
             new Category { UserId = user.Id, Name = "Ropa", Color = "#EC4899", Type = CategoryType.Expense },
             new Category { UserId = user.Id, Name = "Entretenimiento", Color = "#8B5CF6", Type = CategoryType.Expense },
-            new Category { UserId = user.Id, Name = "Otros", Color = "#6B7280", Type = CategoryType.Expense }
+            new Category { UserId = user.Id, Name = "Otros", Color = "#6B7280", Type = CategoryType.Expense },
+            new Category { UserId = user.Id, Name = "Sueldo", Color = "#10B981", Type = CategoryType.Income },
+            new Category { UserId = user.Id, Name = "Regalo", Color = "#F59E0B", Type = CategoryType.Income },
+            new Category { UserId = user.Id, Name = "Reembolso", Color = "#3B82F6", Type = CategoryType.Income },
+            new Category { UserId = user.Id, Name = "Venta", Color = "#8B5CF6", Type = CategoryType.Income },
+            new Category { UserId = user.Id, Name = "Otros ingresos", Color = "#6B7280", Type = CategoryType.Income }
         );
 
         await _db.SaveChangesAsync();

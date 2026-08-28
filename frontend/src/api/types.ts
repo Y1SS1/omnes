@@ -1,6 +1,6 @@
 export type TaskKind = "Task" | "Note" | "DoneActivity";
 export type DeadlineScope = "None" | "Today" | "Week" | "Month";
-export type CategoryType = "Task" | "Expense";
+export type CategoryType = "Task" | "Expense" | "Income";
 export type TransactionType = "Expense" | "Income";
 
 export const ALL_DAYS = [

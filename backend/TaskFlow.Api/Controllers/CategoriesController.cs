@@ -25,6 +25,24 @@ public class CategoriesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<CategoryDto>>> GetAll([FromQuery] CategoryType? type)
     {
+        // Self-heal accounts created before income categories existed: seed them
+        // the first time they're requested instead of requiring a data migration.
+        if (type == CategoryType.Income)
+        {
+            var hasIncome = await _db.Categories.AnyAsync(c => c.UserId == _currentUser.UserId && c.Type == CategoryType.Income);
+            if (!hasIncome)
+            {
+                _db.Categories.AddRange(
+                    new Category { UserId = _currentUser.UserId, Name = "Sueldo", Color = "#10B981", Type = CategoryType.Income },
+                    new Category { UserId = _currentUser.UserId, Name = "Regalo", Color = "#F59E0B", Type = CategoryType.Income },
+                    new Category { UserId = _currentUser.UserId, Name = "Reembolso", Color = "#3B82F6", Type = CategoryType.Income },
+                    new Category { UserId = _currentUser.UserId, Name = "Venta", Color = "#8B5CF6", Type = CategoryType.Income },
+                    new Category { UserId = _currentUser.UserId, Name = "Otros ingresos", Color = "#6B7280", Type = CategoryType.Income }
+                );
+                await _db.SaveChangesAsync();
+            }
+        }
+
         var query = _db.Categories.Where(c => c.UserId == _currentUser.UserId);
         if (type.HasValue) query = query.Where(c => c.Type == type.Value);
         var categories = await query.OrderBy(c => c.Name).ToListAsync();

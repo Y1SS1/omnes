@@ -33,14 +33,15 @@ export default function WalletPage() {
 
   const load = async () => {
     try {
-      const [w, txs, cats] = await Promise.all([
+      const [w, txs, expenseCats, incomeCats] = await Promise.all([
         walletApi.getWallet(),
         walletApi.getTransactions(),
         categoriesApi.getCategories("Expense"),
+        categoriesApi.getCategories("Income"),
       ]);
       setWallet(w);
       setTransactions(txs);
-      setCategories(cats);
+      setCategories([...expenseCats, ...incomeCats]);
       setLoadError(null);
     } catch (err) {
       console.error("Failed to load wallet data", err);
@@ -182,14 +183,20 @@ export default function WalletPage() {
         title="Nuevo gasto o ingreso"
       >
         <form onSubmit={handleCreateTx} className="space-y-3">
-          <Select value={type} onChange={(e) => setType(e.target.value as TransactionType)}>
+          <Select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value as TransactionType);
+              setCategoryId("");
+            }}
+          >
             <option value="Expense">Gasto</option>
             <option value="Income">Ingreso</option>
           </Select>
           <MoneyField value={amount} onChange={setAmount} placeholder="Monto" required />
           <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">Sin categoría</option>
-            {categories.map((c) => (
+            {categories.filter((c) => c.type === type).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
