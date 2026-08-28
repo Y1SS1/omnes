@@ -16,20 +16,24 @@ export default function DashboardPage() {
 
   const [todayTasks, setTodayTasks] = useState<TaskItemDto[]>([]);
   const [todayHabits, setTodayHabits] = useState<TaskItemDto[]>([]);
+  const [doneActivities, setDoneActivities] = useState<TaskItemDto[]>([]);
   const [notes, setNotes] = useState<TaskItemDto[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
   const load = async () => {
-    const [tasks, habits, allNotes, wallet, cats] = await Promise.all([
+    const [tasks, habits, allDone, allNotes, wallet, cats] = await Promise.all([
       tasksApi.getTasks({ scope: "Today", kind: "Task" }),
       tasksApi.getHabits(),
+      tasksApi.getTasks({ kind: "DoneActivity" }),
       tasksApi.getTasks({ kind: "Note" }),
       walletApi.getWallet(),
       categoriesApi.getCategories("Task"),
     ]);
     setTodayTasks(tasks);
     setTodayHabits(habits);
+    const todayStr = new Date().toDateString();
+    setDoneActivities(allDone.filter((d) => d.completedAt && new Date(d.completedAt).toDateString() === todayStr));
     setNotes(allNotes.slice(0, 5));
     setBalance(wallet.balance);
     setCategories(cats);
@@ -66,6 +70,11 @@ export default function DashboardPage() {
 
   const toggleHabit = async (id: string) => {
     await tasksApi.toggleHabit(id);
+    load();
+  };
+
+  const removeDone = async (id: string) => {
+    await tasksApi.deleteTask(id);
     load();
   };
 
@@ -111,6 +120,23 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
+
+          {doneActivities.length > 0 && (
+            <>
+              <h3 className="text-xs font-medium text-neutral-500 mt-4 mb-2">Realizado hoy</h3>
+              <ul className="space-y-2">
+                {doneActivities.map((d) => (
+                  <li key={d.id} className="flex items-center gap-2 text-sm">
+                    <span className="text-emerald-500">✓</span>
+                    <span className="flex-1 min-w-0 truncate line-through text-neutral-500">{d.title}</span>
+                    <button onClick={() => removeDone(d.id)} className="text-neutral-600 hover:text-red-500 text-xs">
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Card>
 
         <Card>

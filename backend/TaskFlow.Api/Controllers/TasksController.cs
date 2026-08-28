@@ -108,6 +108,14 @@ public class TasksController : ControllerBase
             RepeatDays = req.RepeatDays,
             CategoryId = req.CategoryId
         };
+
+        // "Realizado" quick-capture logs something already done, so it's complete on arrival
+        // (counts toward the productivity reports right away instead of sitting invisible).
+        if (req.Kind == TaskKind.DoneActivity)
+        {
+            task.IsCompleted = true;
+            task.CompletedAt = DateTime.UtcNow;
+        }
         _db.Tasks.Add(task);
         await _db.SaveChangesAsync();
         await _db.Entry(task).Reference(t => t.Category).LoadAsync();
