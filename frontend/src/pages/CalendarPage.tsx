@@ -93,8 +93,6 @@ export default function CalendarPage() {
         </Button>
       </div>
 
-      <CategoryLegend categories={categories} />
-
       <Card>
         <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs font-medium text-neutral-500 mb-2">
           {weekDayLabels.map((d) => (
@@ -152,6 +150,10 @@ export default function CalendarPage() {
           })}
         </div>
       </Card>
+
+      <div className="mt-4">
+        <CategoryLegend categories={categories} />
+      </div>
 
       <Modal
         open={selectedDay !== null}

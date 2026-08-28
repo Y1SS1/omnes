@@ -99,8 +99,9 @@ export default function TasksPage() {
             <li key={t.id} className="py-3 flex items-center gap-3">
               <input type="checkbox" checked={t.isCompleted} onChange={() => toggleTask(t.id)} />
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium ${t.isCompleted ? "line-through text-neutral-500" : "text-neutral-100"}`}>
-                  {t.title}
+                <div className={`flex items-center gap-2 text-sm font-medium ${t.isCompleted ? "line-through text-neutral-500" : "text-neutral-100"}`}>
+                  {t.categoryColor && <ColorDot color={t.categoryColor} />}
+                  <span className="truncate">{t.title}</span>
                 </div>
                 {t.description && <div className="text-xs text-neutral-400 truncate">{t.description}</div>}
                 {t.dueAt && (
@@ -109,7 +110,6 @@ export default function TasksPage() {
                   </div>
                 )}
               </div>
-              {t.categoryColor && <ColorDot color={t.categoryColor} />}
               <button onClick={() => removeTask(t.id)} className="text-neutral-600 hover:text-red-500 text-sm">
                 ✕
               </button>
