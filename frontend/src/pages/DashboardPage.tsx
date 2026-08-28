@@ -4,10 +4,12 @@ import * as walletApi from "../api/wallet";
 import * as categoriesApi from "../api/categories";
 import type { Category, DeadlineScope, TaskItemDto, TaskKind } from "../api/types";
 import { Button, Card, ColorDot, Input, PageTitle, Select } from "../components/ui";
+import { useCurrency } from "../context/CurrencyContext";
 
 const kindLabels: Record<TaskKind, string> = { Task: "Por hacer", Note: "Nota general", DoneActivity: "Realizado" };
 
 export default function DashboardPage() {
+  const { formatMoney } = useCurrency();
   const [quickText, setQuickText] = useState("");
   const [quickKind, setQuickKind] = useState<TaskKind>("Task");
   const [saving, setSaving] = useState(false);
@@ -135,7 +137,7 @@ export default function DashboardPage() {
           <h2 className="font-semibold mb-3">Resumen</h2>
           <p className="text-sm text-neutral-400">Saldo disponible</p>
           <p className="text-3xl font-bold text-white mb-4">
-            {balance !== null ? balance.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
+            {balance !== null ? formatMoney(balance) : "—"}
           </p>
           <p className="text-sm text-neutral-400 mb-1">Últimas notas</p>
           <ul className="space-y-1 text-sm text-neutral-300">

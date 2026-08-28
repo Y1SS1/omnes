@@ -23,6 +23,7 @@ import type {
   TaskCategorySlice,
 } from "../api/types";
 import { Card, PageTitle } from "../components/ui";
+import { useCurrency } from "../context/CurrencyContext";
 
 const axisTick = { fill: "#a3a3a3", fontSize: 11 };
 const gridStroke = "#404040";
@@ -34,6 +35,7 @@ const tooltipStyle = {
 const legendStyle = { color: "#d4d4d4" };
 
 export default function ReportsPage() {
+  const { formatMoney } = useCurrency();
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -174,7 +176,7 @@ export default function ReportsPage() {
                 </Pie>
                 <Tooltip
                   {...tooltipStyle}
-                  formatter={(value: any) => Number(value).toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
+                  formatter={(value: any) => formatMoney(Number(value))}
                 />
                 <Legend wrapperStyle={legendStyle} />
               </PieChart>

@@ -3,8 +3,11 @@ import * as walletApi from "../api/wallet";
 import * as categoriesApi from "../api/categories";
 import type { Category, TransactionDto, TransactionType, WalletDto } from "../api/types";
 import { Button, Card, ColorDot, Input, Modal, PageTitle, Select } from "../components/ui";
+import { MoneyField } from "../components/money";
+import { useCurrency } from "../context/CurrencyContext";
 
 export default function WalletPage() {
+  const { formatMoney } = useCurrency();
   const [wallet, setWallet] = useState<WalletDto | null>(null);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -12,9 +15,9 @@ export default function WalletPage() {
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [txModalOpen, setTxModalOpen] = useState(false);
 
-  const [newBalance, setNewBalance] = useState("");
+  const [newBalance, setNewBalance] = useState<number | null>(null);
 
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
   const [type, setType] = useState<TransactionType>("Expense");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
@@ -36,25 +39,23 @@ export default function WalletPage() {
 
   const handleSetBalance = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amt = Number(newBalance);
-    if (Number.isNaN(amt)) return;
-    await walletApi.setBalance(amt);
-    setNewBalance("");
+    if (newBalance === null) return;
+    await walletApi.setBalance(newBalance);
+    setNewBalance(null);
     setBalanceModalOpen(false);
     load();
   };
 
   const handleCreateTx = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amt = Number(amount);
-    if (Number.isNaN(amt) || amt <= 0) return;
+    if (amount === null || amount <= 0) return;
     await walletApi.createTransaction({
-      amount: amt,
+      amount,
       type,
       categoryId: categoryId || null,
       description: description || null,
     });
-    setAmount("");
+    setAmount(null);
     setDescription("");
     setCategoryId("");
     setTxModalOpen(false);
@@ -73,9 +74,7 @@ export default function WalletPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <Card>
           <p className="text-sm text-neutral-400">Saldo disponible</p>
-          <p className="text-3xl font-bold mb-4">
-            {wallet ? wallet.balance.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
-          </p>
+          <p className="text-3xl font-bold mb-4">{wallet ? formatMoney(wallet.balance) : "—"}</p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
             <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
@@ -85,9 +84,7 @@ export default function WalletPage() {
         </Card>
         <Card>
           <p className="text-sm text-neutral-400">Fondo de ahorro intocable</p>
-          <p className="text-3xl font-bold text-emerald-400">
-            {wallet ? wallet.savingsFund.toLocaleString("es-CL", { style: "currency", currency: "CLP" }) : "—"}
-          </p>
+          <p className="text-3xl font-bold text-emerald-400">{wallet ? formatMoney(wallet.savingsFund) : "—"}</p>
           <p className="text-xs text-neutral-500 mt-2">Administra tus ahorros en la sección Ahorros.</p>
         </Card>
       </div>
@@ -109,7 +106,7 @@ export default function WalletPage() {
               </div>
               <div className={`text-sm font-semibold shrink-0 whitespace-nowrap ${t.type === "Income" ? "text-emerald-400" : "text-red-500"}`}>
                 {t.type === "Income" ? "+" : "-"}
-                {t.amount.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}
+                {formatMoney(t.amount)}
               </div>
               <button onClick={() => removeTx(t.id)} className="text-neutral-600 hover:text-red-500 text-sm">
                 ✕
@@ -121,13 +118,7 @@ export default function WalletPage() {
 
       <Modal open={balanceModalOpen} onClose={() => setBalanceModalOpen(false)} title="Ajustar saldo disponible">
         <form onSubmit={handleSetBalance} className="space-y-3">
-          <Input
-            type="number"
-            placeholder="Monto"
-            value={newBalance}
-            onChange={(e) => setNewBalance(e.target.value)}
-            required
-          />
+          <MoneyField value={newBalance} onChange={setNewBalance} placeholder="Monto" required />
           <Button type="submit" className="w-full">Guardar</Button>
         </form>
       </Modal>
@@ -138,13 +129,7 @@ export default function WalletPage() {
             <option value="Expense">Gasto</option>
             <option value="Income">Ingreso</option>
           </Select>
-          <Input
-            type="number"
-            placeholder="Monto"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
+          <MoneyField value={amount} onChange={setAmount} placeholder="Monto" required />
           <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">Sin categoría</option>
             {categories.map((c) => (
