@@ -81,7 +81,8 @@ export function formatAmountInput(rawValue: string, locale: string, decimals: nu
   if (cleaned === "" || cleaned === ".") return { display: "", numeric: null };
 
   const [intPartRaw, decPartRaw = ""] = cleaned.split(".");
-  const intPart = (intPartRaw.replace(/^0+(?=\d)/, "")) || "0";
+  // Matches the numeric(14,2) column limit on the backend (12 integer digits).
+  const intPart = (intPartRaw.replace(/^0+(?=\d)/, "").slice(0, 12)) || "0";
   const decPart = decPartRaw.slice(0, decimals);
 
   const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, group);

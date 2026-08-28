@@ -46,6 +46,8 @@ public class TransactionsController : ControllerBase
     public async Task<ActionResult<TransactionDto>> Create(CreateTransactionRequest req)
     {
         if (req.Amount <= 0) return BadRequest("El monto debe ser mayor a 0.");
+        if (!MoneyValidation.IsWithinRange(req.Amount))
+            return BadRequest($"El monto es demasiado grande. El máximo permitido es {MoneyValidation.MaxAmount:N0}.");
 
         var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == _currentUser.UserId);
         if (wallet is null) return NotFound("Billetera no encontrada.");

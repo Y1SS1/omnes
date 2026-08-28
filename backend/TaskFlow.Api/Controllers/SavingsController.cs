@@ -27,6 +27,8 @@ public class SavingsController : ControllerBase
     public async Task<IActionResult> Allocate(AllocateSavingsRequest req)
     {
         if (req.Amount <= 0) return BadRequest("El monto debe ser mayor a 0.");
+        if (!MoneyValidation.IsWithinRange(req.Amount))
+            return BadRequest($"El monto es demasiado grande. El máximo permitido es {MoneyValidation.MaxAmount:N0}.");
 
         var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == _currentUser.UserId);
         if (wallet is null) return NotFound();
@@ -55,6 +57,8 @@ public class SavingsController : ControllerBase
     public ActionResult<ProjectionResult> Project([FromQuery] decimal monthlyAmount, [FromQuery] int months)
     {
         if (monthlyAmount <= 0 || months <= 0) return BadRequest("Monto y plazo deben ser mayores a 0.");
+        if (!MoneyValidation.IsWithinRange(monthlyAmount))
+            return BadRequest($"El monto es demasiado grande. El máximo permitido es {MoneyValidation.MaxAmount:N0}.");
         return new ProjectionResult(monthlyAmount, months, monthlyAmount * months);
     }
 
@@ -63,6 +67,8 @@ public class SavingsController : ControllerBase
     public ActionResult<QuotaResult> Quota([FromQuery] decimal targetAmount, [FromQuery] int months)
     {
         if (targetAmount <= 0 || months <= 0) return BadRequest("Meta y plazo deben ser mayores a 0.");
+        if (!MoneyValidation.IsWithinRange(targetAmount))
+            return BadRequest($"El monto es demasiado grande. El máximo permitido es {MoneyValidation.MaxAmount:N0}.");
         var quota = Math.Round(targetAmount / months, 2, MidpointRounding.AwayFromZero);
         return new QuotaResult(targetAmount, months, quota);
     }
@@ -71,6 +77,9 @@ public class SavingsController : ControllerBase
     [HttpPost("plan")]
     public async Task<IActionResult> SetPlan(SetSavingsPlanRequest req)
     {
+        if (!MoneyValidation.IsWithinRange(req.PlannedAmount))
+            return BadRequest($"El monto debe estar entre 0 y {MoneyValidation.MaxAmount:N0}.");
+
         var month = new DateOnly(req.Year, req.Month, 1);
         var plan = await _db.SavingsPlans.FirstOrDefaultAsync(p =>
             p.UserId == _currentUser.UserId && p.Month == month);

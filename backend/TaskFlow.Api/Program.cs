@@ -66,6 +66,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Never leak raw exception/stack-trace text to the client - log it server-side
+// and hand back a short, user-facing message instead.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        if (feature?.Error is not null)
+        {
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError(feature.Error, "Unhandled exception on {Path}", feature.Path);
+        }
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("\"Ocurrió un error inesperado en el servidor. Intenta de nuevo.\"");
+    });
+});
+
 app.UseCors("Frontend");
 
 app.UseAuthentication();

@@ -26,6 +26,9 @@ public class BudgetController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<BudgetProgressDto>> Set(SetBudgetRequest req)
     {
+        if (!MoneyValidation.IsWithinRange(req.LimitAmount))
+            return BadRequest($"El monto debe estar entre 0 y {MoneyValidation.MaxAmount:N0}.");
+
         var month = new DateOnly(req.Year, req.Month, 1);
         var budget = await _db.Budgets.FirstOrDefaultAsync(b =>
             b.UserId == _currentUser.UserId && b.Month == month);

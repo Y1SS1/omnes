@@ -33,6 +33,9 @@ public class WalletController : ControllerBase
     [HttpPost("balance")]
     public async Task<ActionResult<WalletDto>> SetBalance(SetBalanceRequest req)
     {
+        if (!MoneyValidation.IsWithinRange(req.Amount))
+            return BadRequest($"El monto debe estar entre 0 y {MoneyValidation.MaxAmount:N0}.");
+
         var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == _currentUser.UserId);
         if (wallet is null) return NotFound();
         wallet.Balance = req.Amount;
