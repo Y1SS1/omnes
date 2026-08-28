@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import * as tasksApi from "../api/tasks";
-import type { TaskItemDto } from "../api/types";
-import { Button, Card, ColorDot, Modal, PageTitle } from "../components/ui";
+import * as categoriesApi from "../api/categories";
+import type { Category, TaskItemDto } from "../api/types";
+import { Button, Card, CategoryLegend, ColorDot, Modal, PageTitle } from "../components/ui";
 
 const monthNames = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -14,6 +15,7 @@ export default function CalendarPage() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-12
   const [items, setItems] = useState<TaskItemDto[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const load = () => tasksApi.getCalendar(year, month).then(setItems);
@@ -22,6 +24,10 @@ export default function CalendarPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
+
+  useEffect(() => {
+    categoriesApi.getCategories("Task").then(setCategories);
+  }, []);
 
   const changeMonth = (delta: number) => {
     let m = month + delta;
@@ -86,6 +92,8 @@ export default function CalendarPage() {
           <span className="sm:hidden">→</span>
         </Button>
       </div>
+
+      <CategoryLegend categories={categories} />
 
       <Card>
         <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs font-medium text-neutral-500 mb-2">

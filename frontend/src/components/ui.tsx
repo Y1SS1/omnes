@@ -33,6 +33,20 @@ export function ColorDot({ color }: { color: string }) {
   return <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
 }
 
+export function CategoryLegend({ categories }: { categories: { id: string; name: string; color: string }[] }) {
+  if (categories.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-4 text-xs text-neutral-400">
+      {categories.map((c) => (
+        <span key={c.id} className="flex items-center gap-1.5">
+          <ColorDot color={c.color} />
+          {c.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function Button({
   children,
   onClick,

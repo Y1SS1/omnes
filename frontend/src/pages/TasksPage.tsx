@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import * as tasksApi from "../api/tasks";
 import * as categoriesApi from "../api/categories";
 import type { Category, DeadlineScope, TaskItemDto } from "../api/types";
-import { Button, Card, ColorDot, Input, Modal, PageTitle, Select } from "../components/ui";
+import { Button, Card, CategoryLegend, ColorDot, Input, Modal, PageTitle, Select } from "../components/ui";
 
 const scopes: { value: DeadlineScope; label: string }[] = [
   { value: "Today", label: "Para hoy" },
@@ -89,6 +89,8 @@ export default function TasksPage() {
         </div>
         <Button onClick={() => setModalOpen(true)}>+ Nueva tarea</Button>
       </div>
+
+      <CategoryLegend categories={categories} />
 
       <Card>
         {tasks.length === 0 && <p className="text-sm text-neutral-500">No hay tareas en este plazo.</p>}
