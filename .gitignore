@@ -7,6 +7,9 @@ frontend/*.local
 # .NET / backend
 backend/**/bin/
 backend/**/obj/
+backend/**/publish/
+backend/**/*.zip
+backend/TaskFlow.Api/wwwroot/
 
 # Local Postgres dev cluster (created by initdb, not part of the app)
 .pgdata/

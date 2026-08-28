@@ -91,4 +91,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Serve the built React app (wwwroot) from the same host as the API, so the
+// whole product lives behind a single Azure URL with no cross-origin setup.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.MapFallbackToFile("index.html");
+
 app.Run();
