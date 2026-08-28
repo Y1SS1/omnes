@@ -1,4 +1,4 @@
-# TaskFlow
+# Omnes
 
 Organizador de vida y tareas + billetera virtual + métricas, con backend en ASP.NET Core y frontend en React. Implementa las historias de usuario descritas en el documento "Reporte sobre US (User Story)" (3 épicas, 24 historias).
 

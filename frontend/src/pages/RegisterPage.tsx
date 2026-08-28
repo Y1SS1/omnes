@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button, Input } from "../components/ui";
+import { Logo } from "../components/Logo";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -31,6 +32,9 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
       <div className="w-full max-w-sm bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm p-8">
+        <div className="flex justify-center mb-2">
+          <Logo width={40} height={40} />
+        </div>
         <h1 className="text-2xl font-bold text-center mb-1 text-white">Crear cuenta</h1>
         <p className="text-sm text-neutral-400 text-center mb-6">Empieza a organizar tu vida</p>
         <form onSubmit={handleSubmit} className="space-y-4">
