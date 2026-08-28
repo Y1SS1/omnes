@@ -75,3 +75,21 @@ La API es multiusuario: cada cuenta tiene su propia billetera, categorías (con 
 ## Azure DevOps
 
 Este repositorio está pensado para vivir en Azure DevOps Repos, con un pipeline de compilación (`azure-pipelines.yml` en la raíz) que valida el build del backend y del frontend en cada push.
+
+## Despliegue en Azure
+
+La app vive desplegada como **un solo App Service** que sirve tanto la API como el frontend ya compilado (el backend sirve los archivos estáticos de `wwwroot/`, sin necesidad de CORS entre dos hosts).
+
+- **URL pública:** https://omnes-api-vyissim.azurewebsites.net
+- **Resource group:** `rg-omnes` (región `chilecentral`)
+- **App Service:** `omnes-api-vyissim` (plan `plan-omnes`, Linux B1)
+- **Base de datos:** `omnes-db-vyissim` (Azure Database for PostgreSQL Flexible Server), base `taskflow`
+- **Configuración** (connection string, `Jwt:Key`, CORS, `ASPNETCORE_ENVIRONMENT=Production`) vive en las App Settings del App Service, no en el repo.
+
+Para volver a desplegar después de hacer cambios:
+
+```powershell
+.\deploy-azure.ps1
+```
+
+Requiere tener `az login` hecho con la cuenta que tiene acceso al resource group.
