@@ -12,18 +12,28 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     setError(null);
     setLoading(true);
     try {
       await login(email, password);
       navigate("/");
-    } catch {
-      setError("Correo o contraseña incorrectos.");
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: string } })?.response?.data;
+      setError(typeof message === "string" && message ? message : "Correo o contraseña incorrectos.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // The <form>'s native submit (GET to the current URL, with fields as a
+  // query string) must never fire - it would leak the password into the URL.
+  // preventDefault() alone wasn't reliably stopping it, so the button below
+  // is type="button" and driven entirely by this onClick instead of relying
+  // on form submission semantics.
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit();
   };
 
   return (
@@ -34,7 +44,7 @@ export default function LoginPage() {
         </div>
         <h1 className="text-2xl font-bold text-center mb-1 text-white">Omnes</h1>
         <p className="text-sm text-neutral-400 text-center mb-6">Organiza tu vida y tus finanzas</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input
             type="password"
@@ -44,7 +54,7 @@ export default function LoginPage() {
             required
           />
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="button" onClick={submit} className="w-full" disabled={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </form>

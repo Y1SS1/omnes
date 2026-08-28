@@ -13,8 +13,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     setError(null);
     setLoading(true);
     try {
@@ -29,6 +28,11 @@ export default function RegisterPage() {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit();
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
       <div className="w-full max-w-sm bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm p-8">
@@ -37,7 +41,7 @@ export default function RegisterPage() {
         </div>
         <h1 className="text-2xl font-bold text-center mb-1 text-white">Crear cuenta</h1>
         <p className="text-sm text-neutral-400 text-center mb-6">Empieza a organizar tu vida</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input placeholder="Nombre" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input
@@ -49,7 +53,7 @@ export default function RegisterPage() {
             minLength={6}
           />
           {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="button" onClick={submit} className="w-full" disabled={loading}>
             {loading ? "Creando..." : "Crear cuenta"}
           </Button>
         </form>
