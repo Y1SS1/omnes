@@ -66,7 +66,7 @@ export default function Layout() {
             <span className="text-lg font-bold tracking-tight text-white hidden sm:inline">Omnes</span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 min-w-0 ml-8">
+          <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 min-w-0 ml-36">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={pillClass}>
                 <span>{item.icon}</span>
