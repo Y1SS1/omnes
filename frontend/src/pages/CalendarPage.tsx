@@ -82,7 +82,7 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-base sm:text-lg text-center truncate">{monthNames[month - 1]} {year}</h2>
           {!isCurrentMonth && (
-            <Button variant="ghost" onClick={goToToday} className="text-indigo-400">
+            <Button variant="ghost" onClick={goToToday} className="text-ink font-semibold">
               Hoy
             </Button>
           )}
@@ -94,7 +94,7 @@ export default function CalendarPage() {
       </div>
 
       <Card>
-        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs font-medium text-neutral-500 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center text-[10px] sm:text-xs font-medium text-mid-gray mb-2">
           {weekDayLabels.map((d) => (
             <div key={d}>{d}</div>
           ))}
@@ -108,19 +108,19 @@ export default function CalendarPage() {
                 type="button"
                 disabled={!cell.day}
                 onClick={() => cell.day && setSelectedDay(cell.day)}
-                className={`min-h-14 sm:min-h-24 rounded-md sm:rounded-lg border p-0.5 sm:p-1.5 overflow-hidden text-left transition-colors ${
+                className={`min-h-14 sm:min-h-24 rounded-md sm:rounded-[18px] border p-0.5 sm:p-1.5 overflow-hidden text-left transition-colors ${
                   !cell.day
                     ? "bg-transparent border-transparent cursor-default"
                     : isToday
-                      ? "bg-indigo-950/50 border-indigo-500 hover:bg-indigo-950/70"
-                      : "bg-neutral-950 border-neutral-800 hover:border-neutral-600"
+                      ? "bg-neutral-100 border-ink hover:bg-neutral-200"
+                      : "bg-canvas border-hairline hover:border-neutral-400"
                 }`}
               >
                 {cell.day && (
                   <>
                     <div
                       className={`text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1 ${
-                        isToday ? "text-indigo-300" : "text-neutral-400"
+                        isToday ? "text-ink" : "text-mid-gray"
                       }`}
                     >
                       {cell.day}
@@ -134,13 +134,13 @@ export default function CalendarPage() {
                     </div>
                     <div className="hidden sm:block space-y-0.5">
                       {cell.items.slice(0, 3).map((it) => (
-                        <div key={it.id} className="flex items-center gap-1 text-[10px] truncate text-neutral-200" title={it.title}>
+                        <div key={it.id} className="flex items-center gap-1 text-[10px] truncate text-ink" title={it.title}>
                           <ColorDot color={it.categoryColor ?? "#94A3B8"} />
                           <span className="truncate">{it.title}</span>
                         </div>
                       ))}
                       {cell.items.length > 3 && (
-                        <div className="text-[10px] text-neutral-500">+{cell.items.length - 3} más</div>
+                        <div className="text-[10px] text-mid-gray">+{cell.items.length - 3} más</div>
                       )}
                     </div>
                   </>
@@ -161,19 +161,19 @@ export default function CalendarPage() {
         title={selectedDay ? `${selectedDay} de ${monthNames[month - 1]}` : ""}
       >
         {selectedItems.length === 0 ? (
-          <p className="text-sm text-neutral-400">No tienes nada programado este día.</p>
+          <p className="text-sm text-mid-gray">No tienes nada programado este día.</p>
         ) : (
           <ul className="space-y-2">
             {selectedItems.map((it) => (
               <li key={it.id} className="flex items-center gap-3 py-1">
                 <ColorDot color={it.categoryColor ?? "#94A3B8"} />
-                <span className="text-sm flex-1 min-w-0 truncate text-neutral-100">{it.title}</span>
+                <span className="text-sm flex-1 min-w-0 truncate text-ink">{it.title}</span>
                 {it.isRepetitive && (
-                  <span className="text-[10px] text-neutral-500 shrink-0">hábito</span>
+                  <span className="text-[10px] text-mid-gray shrink-0">hábito</span>
                 )}
                 <button
                   onClick={() => removeItem(it.id, it.isRepetitive)}
-                  className="text-neutral-600 hover:text-red-500 text-sm shrink-0"
+                  className="text-mid-gray hover:text-red-500 text-sm shrink-0"
                   aria-label="Borrar"
                 >
                   ✕

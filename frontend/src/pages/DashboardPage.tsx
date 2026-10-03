@@ -110,12 +110,12 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
           <h2 className="font-semibold mb-3">Para hoy</h2>
-          {todayTasks.length === 0 && <p className="text-sm text-neutral-500">Nada pendiente para hoy.</p>}
+          {todayTasks.length === 0 && <p className="text-sm text-mid-gray">Nada pendiente para hoy.</p>}
           <ul className="space-y-2">
             {todayTasks.map((t) => (
               <li key={t.id} className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={t.isCompleted} onChange={() => toggleTask(t.id)} />
-                <span className={t.isCompleted ? "line-through text-neutral-500" : ""}>{t.title}</span>
+                <span className={t.isCompleted ? "line-through text-mid-gray" : ""}>{t.title}</span>
                 {categoryFor(t.categoryId) && <ColorDot color={categoryFor(t.categoryId)!.color} />}
               </li>
             ))}
@@ -123,13 +123,13 @@ export default function DashboardPage() {
 
           {doneActivities.length > 0 && (
             <>
-              <h3 className="text-xs font-medium text-neutral-500 mt-4 mb-2">Realizado hoy</h3>
+              <h3 className="text-xs font-medium text-mid-gray mt-4 mb-2">Realizado hoy</h3>
               <ul className="space-y-2">
                 {doneActivities.map((d) => (
                   <li key={d.id} className="flex items-center gap-2 text-sm">
                     <span className="text-emerald-500">✓</span>
-                    <span className="flex-1 min-w-0 truncate line-through text-neutral-500">{d.title}</span>
-                    <button onClick={() => removeDone(d.id)} className="text-neutral-600 hover:text-red-500 text-xs">
+                    <span className="flex-1 min-w-0 truncate line-through text-mid-gray">{d.title}</span>
+                    <button onClick={() => removeDone(d.id)} className="text-mid-gray hover:text-red-500 text-xs">
                       ✕
                     </button>
                   </li>
@@ -141,19 +141,19 @@ export default function DashboardPage() {
 
         <Card>
           <h2 className="font-semibold mb-3">Hábitos de hoy</h2>
-          {todayHabits.length === 0 && <p className="text-sm text-neutral-500">No hay hábitos programados para hoy.</p>}
+          {todayHabits.length === 0 && <p className="text-sm text-mid-gray">No hay hábitos programados para hoy.</p>}
           <ul className="space-y-2">
             {todayHabits.map((h) => (
               <li key={h.id} className="flex items-center gap-2 text-sm">
                 <button
                   onClick={() => toggleHabit(h.id)}
                   className={`h-5 w-5 rounded-full border flex items-center justify-center text-xs ${
-                    h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-neutral-700"
+                    h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-hairline"
                   }`}
                 >
                   {h.habitCheckedToday ? "✓" : ""}
                 </button>
-                <span className={h.habitCheckedToday ? "line-through text-neutral-500" : ""}>{h.title}</span>
+                <span className={h.habitCheckedToday ? "line-through text-mid-gray" : ""}>{h.title}</span>
               </li>
             ))}
           </ul>
@@ -161,21 +161,21 @@ export default function DashboardPage() {
 
         <Card>
           <h2 className="font-semibold mb-3">Resumen</h2>
-          <p className="text-sm text-neutral-400">Saldo disponible</p>
-          <p className="text-3xl font-bold text-white mb-4">
+          <p className="text-sm text-mid-gray">Saldo disponible</p>
+          <p className="text-3xl font-bold text-ink mb-4">
             {balance !== null ? formatMoney(balance) : "—"}
           </p>
-          <p className="text-sm text-neutral-400 mb-1">Últimas notas</p>
-          <ul className="space-y-1 text-sm text-neutral-300">
+          <p className="text-sm text-mid-gray mb-1">Últimas notas</p>
+          <ul className="space-y-1 text-sm text-ink">
             {notes.map((n) => (
               <li key={n.id} className="truncate">📌 {n.title}</li>
             ))}
-            {notes.length === 0 && <li className="text-neutral-500">Sin notas todavía.</li>}
+            {notes.length === 0 && <li className="text-mid-gray">Sin notas todavía.</li>}
           </ul>
         </Card>
       </div>
 
-      <p className="text-xs text-neutral-500 mt-6">Tipos disponibles: {Object.values(kindLabels).join(" · ")}</p>
+      <p className="text-xs text-mid-gray mt-6">Tipos disponibles: {Object.values(kindLabels).join(" · ")}</p>
     </div>
   );
 }

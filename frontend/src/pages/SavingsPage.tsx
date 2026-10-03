@@ -118,7 +118,7 @@ export default function SavingsPage() {
 
       {!selectedGoal ? (
         <Card>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-mid-gray">
             Todavía no tienes ninguna meta de ahorro. Crea la primera con "+ Nueva meta" — por ejemplo, "Cambio de
             maquinaria", con el monto que necesitas y en cuántos meses quieres lograrlo.
           </p>
@@ -127,8 +127,8 @@ export default function SavingsPage() {
         <>
           <Card className="mb-6">
             <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-white">{selectedGoal.name}</h2>
-              <button onClick={handleDeleteGoal} className="text-neutral-600 hover:text-red-500 text-sm shrink-0">
+              <h2 className="text-xl font-bold text-ink">{selectedGoal.name}</h2>
+              <button onClick={handleDeleteGoal} className="text-mid-gray hover:text-red-500 text-sm shrink-0">
                 Borrar meta
               </button>
             </div>
@@ -137,13 +137,13 @@ export default function SavingsPage() {
               percent={(selectedGoal.savedAmount / selectedGoal.targetAmount) * 100}
               color="green"
             />
-            <p className="text-sm text-neutral-400 mt-2">
-              Ahorrado <span className="font-semibold text-white">{formatMoney(selectedGoal.savedAmount)}</span> de{" "}
+            <p className="text-sm text-mid-gray mt-2">
+              Ahorrado <span className="font-semibold text-ink">{formatMoney(selectedGoal.savedAmount)}</span> de{" "}
               {formatMoney(selectedGoal.targetAmount)} (
               {Math.min(100, Math.round((selectedGoal.savedAmount / selectedGoal.targetAmount) * 100))}%)
             </p>
-            <p className="text-sm text-neutral-400 mt-1">
-              Necesitas ahorrar <span className="font-semibold text-white">{formatMoney(selectedGoal.monthlyQuota)}</span> al
+            <p className="text-sm text-mid-gray mt-1">
+              Necesitas ahorrar <span className="font-semibold text-ink">{formatMoney(selectedGoal.monthlyQuota)}</span> al
               mes durante {selectedGoal.targetMonths} {selectedGoal.targetMonths === 1 ? "mes" : "meses"} para llegar a la meta.
             </p>
 
@@ -154,7 +154,7 @@ export default function SavingsPage() {
               <Button type="submit">Apartar</Button>
             </form>
             {formError && <p className="text-sm text-red-400 mt-2">{formError}</p>}
-            <p className="text-xs text-neutral-500 mt-2">
+            <p className="text-xs text-mid-gray mt-2">
               Saldo disponible actual: {wallet ? formatMoney(wallet.balance) : "—"} · Fondo total (todas las metas):{" "}
               {wallet ? formatMoney(wallet.savingsFund) : "—"}
             </p>
@@ -163,12 +163,12 @@ export default function SavingsPage() {
           <Card>
             <h2 className="font-semibold mb-3">Movimientos de "{selectedGoal.name}"</h2>
             {movements.length === 0 ? (
-              <p className="text-sm text-neutral-500">Sin movimientos todavía para esta meta.</p>
+              <p className="text-sm text-mid-gray">Sin movimientos todavía para esta meta.</p>
             ) : (
-              <ul className="divide-y divide-neutral-800">
+              <ul className="divide-y divide-hairline">
                 {movements.map((m) => (
                   <li key={m.id} className="py-2 flex justify-between text-sm">
-                    <span className="text-neutral-400">{new Date(m.date).toLocaleDateString("es-CL")}</span>
+                    <span className="text-mid-gray">{new Date(m.date).toLocaleDateString("es-CL")}</span>
                     <span className="font-semibold text-emerald-400">+{formatMoney(m.amount)}</span>
                   </li>
                 ))}

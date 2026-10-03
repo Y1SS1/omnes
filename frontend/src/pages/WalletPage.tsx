@@ -102,7 +102,7 @@ export default function WalletPage() {
       <PageTitle title="Billetera virtual" subtitle="Controla tu saldo y cada gasto o ingreso." />
 
       {loadError && (
-        <div className="mb-4 rounded-lg border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-300 flex items-center justify-between gap-3">
+        <div className="mb-4 rounded-[18px] border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-300 flex items-center justify-between gap-3">
           <span>{loadError}</span>
           <Button variant="secondary" onClick={load}>
             Reintentar
@@ -112,7 +112,7 @@ export default function WalletPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
         <Card>
-          <p className="text-sm text-neutral-400">Saldo disponible</p>
+          <p className="text-sm text-mid-gray">Saldo disponible</p>
           <p className="text-3xl font-bold mb-4">
             {wallet ? formatMoney(wallet.balance) : loading ? "Cargando…" : "—"}
           </p>
@@ -124,26 +124,26 @@ export default function WalletPage() {
           </div>
         </Card>
         <Card>
-          <p className="text-sm text-neutral-400">Fondo de ahorro intocable</p>
+          <p className="text-sm text-mid-gray">Fondo de ahorro intocable</p>
           <p className="text-3xl font-bold text-emerald-400">
             {wallet ? formatMoney(wallet.savingsFund) : loading ? "Cargando…" : "—"}
           </p>
-          <p className="text-xs text-neutral-500 mt-2">Administra tus ahorros en la sección Ahorros.</p>
+          <p className="text-xs text-mid-gray mt-2">Administra tus ahorros en la sección Ahorros.</p>
         </Card>
       </div>
 
       <Card>
         <h2 className="font-semibold mb-3">Historial de movimientos</h2>
-        {transactions.length === 0 && <p className="text-sm text-neutral-500">Sin movimientos todavía.</p>}
-        <ul className="divide-y divide-neutral-800">
+        {transactions.length === 0 && <p className="text-sm text-mid-gray">Sin movimientos todavía.</p>}
+        <ul className="divide-y divide-hairline">
           {transactions.map((t) => (
             <li key={t.id} className="py-3 flex items-center gap-3">
               {t.categoryColor && <ColorDot color={t.categoryColor} />}
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-neutral-100 truncate">
+                <div className="text-sm font-medium text-ink truncate">
                   {t.categoryName ?? "Sin categoría"} {t.description && `· ${t.description}`}
                 </div>
-                <div className="text-xs text-neutral-500">
+                <div className="text-xs text-mid-gray">
                   {new Date(t.date).toLocaleDateString("es-CL", { dateStyle: "medium" })}
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function WalletPage() {
                 {t.type === "Income" ? "+" : "-"}
                 {formatMoney(t.amount)}
               </div>
-              <button onClick={() => removeTx(t.id)} className="text-neutral-600 hover:text-red-500 text-sm">
+              <button onClick={() => removeTx(t.id)} className="text-mid-gray hover:text-red-500 text-sm">
                 ✕
               </button>
             </li>

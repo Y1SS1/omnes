@@ -79,8 +79,8 @@ export default function TasksPage() {
             <button
               key={s.value}
               onClick={() => setScope(s.value)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium ${
-                scope === s.value ? "bg-indigo-600 text-white" : "bg-neutral-900 border border-neutral-800 text-neutral-300"
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-[18px] text-xs sm:text-sm font-medium ${
+                scope === s.value ? "bg-ink text-white" : "bg-paper border border-hairline text-ink"
               }`}
             >
               {s.label}
@@ -93,24 +93,24 @@ export default function TasksPage() {
       <CategoryLegend categories={categories} />
 
       <Card>
-        {tasks.length === 0 && <p className="text-sm text-neutral-500">No hay tareas en este plazo.</p>}
-        <ul className="divide-y divide-neutral-800">
+        {tasks.length === 0 && <p className="text-sm text-mid-gray">No hay tareas en este plazo.</p>}
+        <ul className="divide-y divide-hairline">
           {tasks.map((t) => (
             <li key={t.id} className="py-3 flex items-center gap-3">
               <input type="checkbox" checked={t.isCompleted} onChange={() => toggleTask(t.id)} />
               <div className="flex-1 min-w-0">
-                <div className={`flex items-center gap-2 text-sm font-medium ${t.isCompleted ? "line-through text-neutral-500" : "text-neutral-100"}`}>
+                <div className={`flex items-center gap-2 text-sm font-medium ${t.isCompleted ? "line-through text-mid-gray" : "text-ink"}`}>
                   {t.categoryColor && <ColorDot color={t.categoryColor} />}
                   <span className="truncate">{t.title}</span>
                 </div>
-                {t.description && <div className="text-xs text-neutral-400 truncate">{t.description}</div>}
+                {t.description && <div className="text-xs text-mid-gray truncate">{t.description}</div>}
                 {t.dueAt && (
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-xs text-mid-gray">
                     ⏰ {new Date(t.dueAt).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                   </div>
                 )}
               </div>
-              <button onClick={() => removeTask(t.id)} className="text-neutral-600 hover:text-red-500 text-sm">
+              <button onClick={() => removeTask(t.id)} className="text-mid-gray hover:text-red-500 text-sm">
                 ✕
               </button>
             </li>
@@ -123,7 +123,7 @@ export default function TasksPage() {
           <Input placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <Input placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div>
-            <label className="text-xs text-neutral-400">Recordatorio con fecha y hora exacta (opcional)</label>
+            <label className="text-xs text-mid-gray">Recordatorio con fecha y hora exacta (opcional)</label>
             <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
           </div>
           <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>

@@ -30,7 +30,8 @@ export default function BudgetPage() {
     setProgress(data);
   };
 
-  const monthLabel = new Date(year, month - 1, 1).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+  const monthLabelRaw = new Date(year, month - 1, 1).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
+  const monthLabel = monthLabelRaw.charAt(0).toUpperCase() + monthLabelRaw.slice(1);
 
   return (
     <div>
@@ -39,16 +40,16 @@ export default function BudgetPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold capitalize">{monthLabel}</h2>
+            <h2 className="font-semibold">{monthLabel}</h2>
             {progress && (
-              <span className="text-sm text-neutral-400">
+              <span className="text-sm text-mid-gray">
                 {formatMoney(progress.spent)} de {formatMoney(progress.limitAmount)}
               </span>
             )}
           </div>
           {progress && <ProgressBar percent={progress.percentUsed} color={progress.color} />}
           {progress && (
-            <p className="text-sm text-neutral-400 mt-2">
+            <p className="text-sm text-mid-gray mt-2">
               Has usado el <span className="font-semibold">{progress.percentUsed}%</span> de tu presupuesto.
             </p>
           )}

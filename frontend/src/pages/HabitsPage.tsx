@@ -81,25 +81,25 @@ export default function HabitsPage() {
 
       <Card className="mb-6">
         <h2 className="font-semibold mb-3">Hoy</h2>
-        {todayHabits.length === 0 && <p className="text-sm text-neutral-500">No tienes hábitos programados para hoy.</p>}
+        {todayHabits.length === 0 && <p className="text-sm text-mid-gray">No tienes hábitos programados para hoy.</p>}
         <ul className="space-y-2">
           {[...pending, ...done].map((h) => (
             <li key={h.id} className="flex items-center gap-3 py-1">
               <button
                 onClick={() => toggleCheck(h.id)}
                 className={`h-6 w-6 rounded-full border flex items-center justify-center text-sm shrink-0 ${
-                  h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-neutral-700"
+                  h.habitCheckedToday ? "bg-emerald-500 border-emerald-500 text-white" : "border-hairline"
                 }`}
               >
                 {h.habitCheckedToday ? "✓" : ""}
               </button>
-              <span className={`text-sm flex-1 min-w-0 truncate ${h.habitCheckedToday ? "line-through text-neutral-500" : "text-neutral-100"}`}>
+              <span className={`text-sm flex-1 min-w-0 truncate ${h.habitCheckedToday ? "line-through text-mid-gray" : "text-ink"}`}>
                 {h.title}
               </span>
-              <span className="hidden md:inline text-[11px] text-neutral-500 shrink-0 max-w-[10rem] truncate" title={h.repeatDays}>
+              <span className="hidden md:inline text-[11px] text-mid-gray shrink-0 max-w-[10rem] truncate" title={h.repeatDays}>
                 {h.repeatDays}
               </span>
-              <button onClick={() => removeHabit(h.id)} className="text-neutral-600 hover:text-red-500 text-sm">
+              <button onClick={() => removeHabit(h.id)} className="text-mid-gray hover:text-red-500 text-sm">
                 ✕
               </button>
             </li>
@@ -109,20 +109,20 @@ export default function HabitsPage() {
 
       <Card>
         <h2 className="font-semibold mb-1">Todos tus hábitos</h2>
-        <p className="text-xs text-neutral-400 mb-3">
+        <p className="text-xs text-mid-gray mb-3">
           Incluye los que no están programados para hoy — solo se pueden borrar aquí, no marcar.
         </p>
         {otherHabits.length === 0 ? (
-          <p className="text-sm text-neutral-500">No tienes otros hábitos programados para otros días.</p>
+          <p className="text-sm text-mid-gray">No tienes otros hábitos programados para otros días.</p>
         ) : (
           <ul className="space-y-2">
             {otherHabits.map((h) => (
               <li key={h.id} className="flex items-center gap-3 py-1">
-                <span className="text-sm flex-1 min-w-0 truncate text-neutral-300">{h.title}</span>
-                <span className="text-[11px] text-neutral-500 shrink-0 max-w-[12rem] truncate" title={h.repeatDays}>
+                <span className="text-sm flex-1 min-w-0 truncate text-ink">{h.title}</span>
+                <span className="text-[11px] text-mid-gray shrink-0 max-w-[12rem] truncate" title={h.repeatDays}>
                   {h.repeatDays}
                 </span>
-                <button onClick={() => removeHabit(h.id)} className="text-neutral-600 hover:text-red-500 text-sm">
+                <button onClick={() => removeHabit(h.id)} className="text-mid-gray hover:text-red-500 text-sm">
                   ✕
                 </button>
               </li>
@@ -135,7 +135,7 @@ export default function HabitsPage() {
         <form onSubmit={handleCreate} className="space-y-4">
           <Input placeholder="Ej: Tomar medicamento" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <div>
-            <label className="text-xs text-neutral-400 block mb-2">Días de la semana</label>
+            <label className="text-xs text-mid-gray block mb-2">Días de la semana</label>
             <div className="flex flex-wrap gap-2">
               {ALL_DAYS.map((day) => (
                 <button
@@ -144,8 +144,8 @@ export default function HabitsPage() {
                   onClick={() => toggleDay(day)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
                     selectedDays.has(day)
-                      ? "bg-indigo-600 border-indigo-600 text-white"
-                      : "border-neutral-700 text-neutral-300"
+                      ? "bg-ink border-ink text-white"
+                      : "border-hairline text-ink"
                   }`}
                 >
                   {dayLabels[day]}

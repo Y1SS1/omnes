@@ -53,17 +53,17 @@ export default function Layout() {
   const pillClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
       isActive
-        ? "bg-indigo-600 border-indigo-600 text-white"
-        : "border-neutral-700 text-neutral-300 hover:border-neutral-500 hover:text-white"
+        ? "bg-ink border-ink text-white"
+        : "border-hairline text-mid-gray hover:border-neutral-400 hover:text-ink"
     }`;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-neutral-800 bg-neutral-900 px-4 md:px-6 relative">
+      <header className="border-b border-hairline bg-paper px-4 md:px-6 relative">
         <div className="h-16 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
             <Logo width={28} height={28} />
-            <span className="text-lg font-bold tracking-tight text-white hidden sm:inline">Omnes</span>
+            <span className="text-lg font-semibold tracking-tight text-ink hidden sm:inline">Omnes</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 min-w-0 ml-36">
@@ -77,20 +77,20 @@ export default function Layout() {
 
           <button
             onClick={() => setMenuOpen((s) => !s)}
-            className="md:hidden ml-auto text-neutral-300 hover:text-white p-2"
+            className="md:hidden ml-auto text-mid-gray hover:text-ink p-2"
             aria-label="Abrir menú"
           >
             ☰
           </button>
 
           <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
-            <span className="text-sm text-neutral-400 truncate max-w-[10rem]">{user?.displayName}</span>
-            <button onClick={handleLogout} className="text-xs text-neutral-500 hover:text-white">
+            <span className="text-sm text-mid-gray truncate max-w-[10rem]">{user?.displayName}</span>
+            <button onClick={handleLogout} className="text-xs text-mid-gray hover:text-ink">
               Cerrar sesión
             </button>
             <button
               onClick={() => setShowNotifications((s) => !s)}
-              className="relative rounded-full p-2 hover:bg-neutral-800"
+              className="relative rounded-full p-2 hover:bg-canvas"
               aria-label="Notificaciones"
             >
               🔔
@@ -104,7 +104,7 @@ export default function Layout() {
 
           <button
             onClick={() => setShowNotifications((s) => !s)}
-            className="md:hidden relative rounded-full p-2 hover:bg-neutral-800"
+            className="md:hidden relative rounded-full p-2 hover:bg-canvas"
             aria-label="Notificaciones"
           >
             🔔
@@ -125,8 +125,8 @@ export default function Layout() {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                    isActive ? "bg-indigo-600 text-white" : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                  `flex items-center gap-3 rounded-[18px] px-3 py-2 text-sm font-medium ${
+                    isActive ? "bg-ink text-white" : "text-mid-gray hover:bg-canvas hover:text-ink"
                   }`
                 }
               >
@@ -134,9 +134,9 @@ export default function Layout() {
                 {item.label}
               </NavLink>
             ))}
-            <div className="flex items-center justify-between px-3 pt-3 mt-2 border-t border-neutral-800 text-sm">
-              <span className="text-neutral-400 truncate">{user?.displayName}</span>
-              <button onClick={handleLogout} className="text-neutral-500 hover:text-white text-xs">
+            <div className="flex items-center justify-between px-3 pt-3 mt-2 border-t border-hairline text-sm">
+              <span className="text-mid-gray truncate">{user?.displayName}</span>
+              <button onClick={handleLogout} className="text-mid-gray hover:text-ink text-xs">
                 Cerrar sesión
               </button>
             </div>
@@ -144,17 +144,17 @@ export default function Layout() {
         )}
 
         {showNotifications && (
-          <div className="absolute right-4 md:right-6 top-16 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg shadow-black/40 z-20">
+          <div className="absolute right-4 md:right-6 top-16 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-paper border border-hairline rounded-[18px] shadow-xl z-20">
             {notifications.length === 0 ? (
-              <div className="p-4 text-sm text-neutral-400">Sin notificaciones por ahora.</div>
+              <div className="p-4 text-sm text-mid-gray">Sin notificaciones por ahora.</div>
             ) : (
-              <div className="flex justify-end px-3 py-2 border-b border-neutral-800">
+              <div className="flex justify-end px-3 py-2 border-b border-hairline">
                 <button
                   onClick={async () => {
                     await notificationsApi.clearNotifications();
                     loadNotifications();
                   }}
-                  className="text-xs text-neutral-400 hover:text-white"
+                  className="text-xs text-mid-gray hover:text-ink"
                 >
                   Limpiar todas
                 </button>
@@ -163,7 +163,7 @@ export default function Layout() {
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className="flex items-start gap-2 px-4 py-3 text-sm border-b border-neutral-800 last:border-0 hover:bg-neutral-800"
+                className="flex items-start gap-2 px-4 py-3 text-sm border-b border-hairline last:border-0 hover:bg-canvas"
               >
                 <button
                   onClick={async () => {
@@ -172,10 +172,10 @@ export default function Layout() {
                       loadNotifications();
                     }
                   }}
-                  className={`flex-1 min-w-0 text-left ${n.isRead ? "text-neutral-500" : "text-white font-medium"}`}
+                  className={`flex-1 min-w-0 text-left ${n.isRead ? "text-mid-gray" : "text-ink font-medium"}`}
                 >
                   {n.message}
-                  <div className="text-[11px] text-neutral-500 mt-1">
+                  <div className="text-[11px] text-mid-gray mt-1">
                     {new Date(n.createdAt).toLocaleString()}
                   </div>
                 </button>
@@ -184,7 +184,7 @@ export default function Layout() {
                     await notificationsApi.deleteNotification(n.id);
                     loadNotifications();
                   }}
-                  className="shrink-0 text-neutral-600 hover:text-red-500"
+                  className="shrink-0 text-mid-gray hover:text-ember"
                   aria-label="Borrar notificación"
                 >
                   ✕
@@ -195,7 +195,7 @@ export default function Layout() {
         )}
       </header>
 
-      <main className="flex-1 p-4 md:p-6 bg-neutral-950 overflow-x-hidden">
+      <main className="flex-1 p-4 md:p-6 bg-canvas overflow-x-hidden">
         <Outlet />
       </main>
     </div>

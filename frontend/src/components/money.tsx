@@ -8,7 +8,7 @@ export function CurrencySelect({ className = "" }: { className?: string }) {
       value={currency}
       onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
       title="Moneda"
-      className={`rounded-lg border border-neutral-700 bg-neutral-950 text-white px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${className}`}
+      className={`rounded-[18px] border border-transparent bg-canvas text-ink px-2 py-2 text-sm focus:outline-none focus:border-hairline focus:ring-1 focus:ring-hairline ${className}`}
     >
       {Object.values(CURRENCIES).map((c) => (
         <option key={c.code} value={c.code}>
@@ -66,7 +66,7 @@ export function MoneyInput({
       onChange={handleChange}
       placeholder={placeholder}
       required={required}
-      className={`w-full rounded-lg border border-neutral-700 bg-neutral-950 text-white placeholder:text-neutral-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${className}`}
+      className={`w-full rounded-[18px] border border-transparent bg-canvas text-ink placeholder:text-mid-gray px-3 py-2 text-sm focus:outline-none focus:border-hairline focus:ring-1 focus:ring-hairline ${className}`}
     />
   );
 }

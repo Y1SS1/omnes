@@ -64,7 +64,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <h2 className="font-semibold mb-1">Cumplimiento de hábitos</h2>
-          <p className="text-xs text-neutral-400 mb-3">Días cumplidos vs. días programados este mes.</p>
+          <p className="text-xs text-mid-gray mb-3">Días cumplidos vs. días programados este mes.</p>
           {habitReport.length === 0 ? (
             <EmptyState />
           ) : (
@@ -84,7 +84,7 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Línea de productividad</h2>
-          <p className="text-xs text-neutral-400 mb-3">Tareas y hábitos completados por día (últimos 7 días).</p>
+          <p className="text-xs text-mid-gray mb-3">Tareas y hábitos completados por día (últimos 7 días).</p>
           {productivity.length === 0 ? (
             <EmptyState />
           ) : (
@@ -102,7 +102,7 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Distribución por categoría</h2>
-          <p className="text-xs text-neutral-400 mb-3">Tareas completadas este mes, por color/categoría.</p>
+          <p className="text-xs text-mid-gray mb-3">Tareas completadas este mes, por color/categoría.</p>
           {taskCategories.length === 0 ? (
             <EmptyState />
           ) : (
@@ -129,7 +129,7 @@ export default function ReportsPage() {
 
         <Card>
           <h2 className="font-semibold mb-1">Ahorro real vs. planificado</h2>
-          <p className="text-xs text-neutral-400 mb-3">Meta del mes vs. lo depositado en el fondo.</p>
+          <p className="text-xs text-mid-gray mb-3">Meta del mes vs. lo depositado en el fondo.</p>
           {savingsComparison && (savingsComparison.planned > 0 || savingsComparison.real > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
@@ -155,7 +155,7 @@ export default function ReportsPage() {
 
         <Card className="lg:col-span-2">
           <h2 className="font-semibold mb-1">Gastos por categoría</h2>
-          <p className="text-xs text-neutral-400 mb-3">Desglose de tu gasto mensual, de mayor a menor.</p>
+          <p className="text-xs text-mid-gray mb-3">Desglose de tu gasto mensual, de mayor a menor.</p>
           {expenseCategories.length === 0 ? (
             <EmptyState />
           ) : (
@@ -189,5 +189,5 @@ export default function ReportsPage() {
 }
 
 function EmptyState() {
-  return <p className="text-sm text-neutral-500 py-10 text-center">Aún no hay datos suficientes para este gráfico.</p>;
+  return <p className="text-sm text-mid-gray py-10 text-center">Aún no hay datos suficientes para este gráfico.</p>;
 }

@@ -34,13 +34,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 px-4">
-      <div className="w-full max-w-sm bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm p-8">
+    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
+      <div className="w-full max-w-sm bg-paper rounded-[24px] border border-hairline shadow-sm p-8">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
         </div>
-        <h1 className="text-2xl font-bold text-center mb-1 text-white">Crear cuenta</h1>
-        <p className="text-sm text-neutral-400 text-center mb-6">Empieza a organizar tu vida</p>
+        <h1 className="text-2xl font-bold text-center mb-1 text-ink">Crear cuenta</h1>
+        <p className="text-sm text-mid-gray text-center mb-6">Empieza a organizar tu vida</p>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input placeholder="Nombre" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -57,8 +57,8 @@ export default function RegisterPage() {
             {loading ? "Creando..." : "Crear cuenta"}
           </Button>
         </form>
-        <p className="text-sm text-center text-neutral-400 mt-4">
-          ¿Ya tienes cuenta? <Link to="/login" className="text-indigo-600 font-medium">Inicia sesión</Link>
+        <p className="text-sm text-center text-mid-gray mt-4">
+          ¿Ya tienes cuenta? <Link to="/login" className="text-ink font-semibold hover:underline">Inicia sesión</Link>
         </p>
       </div>
     </div>
