@@ -62,6 +62,8 @@ stages:
             displayName: "Publish coverage report"
 
           - script: |
+              # The container's user must be able to write the report into the mounted folder.
+              chmod a+w $(Build.SourcesDirectory)
               docker run --rm -v $(Build.SourcesDirectory):/zap/wrk/:rw \
                 -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
                 -t https://omnes-api-vyissim.azurewebsites.net \
