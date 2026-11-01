@@ -1,1 +1,7 @@
-npm --prefix frontend run lint
+if [ -f "frontend/frontend/package.json" ]; then
+  npm --prefix frontend/frontend run lint
+elif [ -f "frontend/package.json" ]; then
+  npm --prefix frontend run lint
+elif [ -f "package.json" ]; then
+  npm run lint
+fi
