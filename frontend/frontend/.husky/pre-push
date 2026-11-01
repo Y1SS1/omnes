@@ -1,3 +1,4 @@
+#!/bin/sh
 echo "Verificando que el proyecto compile antes de pushear..."
 if [ -d "frontend/frontend" ]; then
   (cd frontend/frontend && npx tsc -b --noEmit)

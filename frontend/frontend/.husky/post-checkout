@@ -1,3 +1,4 @@
+#!/bin/sh
 prev_head="$1"
 new_head="$2"
 branch_checkout="$3"
