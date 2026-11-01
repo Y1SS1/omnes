@@ -73,32 +73,6 @@ namespace TaskFlow.Api.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("TaskFlow.Api.Models.HabitCompletion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CheckedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("IsChecked")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("TaskItemId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaskItemId", "Date")
-                        .IsUnique();
-
-                    b.ToTable("HabitCompletions");
-                });
-
             modelBuilder.Entity("TaskFlow.Api.Models.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -114,9 +88,6 @@ namespace TaskFlow.Api.Migrations
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("RelatedTaskId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -213,61 +184,6 @@ namespace TaskFlow.Api.Migrations
                     b.ToTable("SavingsPlans");
                 });
 
-            modelBuilder.Entity("TaskFlow.Api.Models.TaskItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DeadlineScope")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("DueAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsRepetitive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("Kind")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("NotificationSent")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("RepeatDays")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Tasks");
-                });
-
             modelBuilder.Entity("TaskFlow.Api.Models.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -319,9 +235,15 @@ namespace TaskFlow.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("JobTitle")
+                        .HasColumnType("text");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -378,17 +300,6 @@ namespace TaskFlow.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TaskFlow.Api.Models.HabitCompletion", b =>
-                {
-                    b.HasOne("TaskFlow.Api.Models.TaskItem", "TaskItem")
-                        .WithMany("HabitCompletions")
-                        .HasForeignKey("TaskItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("TaskItem");
-                });
-
             modelBuilder.Entity("TaskFlow.Api.Models.Notification", b =>
                 {
                     b.HasOne("TaskFlow.Api.Models.User", "User")
@@ -440,24 +351,6 @@ namespace TaskFlow.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("TaskFlow.Api.Models.TaskItem", b =>
-                {
-                    b.HasOne("TaskFlow.Api.Models.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("TaskFlow.Api.Models.User", "User")
-                        .WithMany("Tasks")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("TaskFlow.Api.Models.Transaction", b =>
                 {
                     b.HasOne("TaskFlow.Api.Models.Category", "Category")
@@ -492,11 +385,6 @@ namespace TaskFlow.Api.Migrations
                     b.Navigation("Movements");
                 });
 
-            modelBuilder.Entity("TaskFlow.Api.Models.TaskItem", b =>
-                {
-                    b.Navigation("HabitCompletions");
-                });
-
             modelBuilder.Entity("TaskFlow.Api.Models.User", b =>
                 {
                     b.Navigation("Budgets");
@@ -508,8 +396,6 @@ namespace TaskFlow.Api.Migrations
                     b.Navigation("SavingsMovements");
 
                     b.Navigation("SavingsPlans");
-
-                    b.Navigation("Tasks");
 
                     b.Navigation("Transactions");
 

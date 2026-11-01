@@ -1,3 +1,3 @@
 namespace TaskFlow.Api.Dtos;
 
-public record NotificationDto(Guid Id, string Message, Guid? RelatedTaskId, bool IsRead, DateTime CreatedAt);
+public record NotificationDto(Guid Id, string Message, bool IsRead, DateTime CreatedAt);

@@ -20,7 +20,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<JwtTokenService>();
-builder.Services.AddHostedService<ReminderNotificationService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(options =>
@@ -58,6 +57,16 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // Covers the case where this account was created before the Admin role
+    // existed, or before AppConstants.AdminEmail changed - registering fresh
+    // already assigns it correctly.
+    var adminUser = db.Users.FirstOrDefault(u => u.Email == TaskFlow.Api.AppConstants.AdminEmail);
+    if (adminUser is not null && adminUser.Role != TaskFlow.Api.Models.UserRole.Admin)
+    {
+        adminUser.Role = TaskFlow.Api.Models.UserRole.Admin;
+        db.SaveChanges();
+    }
 }
 
 if (app.Environment.IsDevelopment())

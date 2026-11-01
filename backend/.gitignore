@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+**/publish/
+**/*.zip
+TaskFlow.Api/wwwroot/
+**/TestResults/
+CoverageReport/

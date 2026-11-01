@@ -1,0 +1,2 @@
+echo "Verificando que el proyecto compile antes de pushear..."
+(cd frontend && npx tsc -b --noEmit)

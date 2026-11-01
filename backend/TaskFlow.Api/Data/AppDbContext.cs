@@ -9,8 +9,6 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
-    public DbSet<TaskItem> Tasks => Set<TaskItem>();
-    public DbSet<HabitCompletion> HabitCompletions => Set<HabitCompletion>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Budget> Budgets => Set<Budget>();
@@ -38,21 +36,6 @@ public class AppDbContext : DbContext
         {
             e.HasOne(c => c.User).WithMany(u => u.Categories)
                 .HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<TaskItem>(e =>
-        {
-            e.HasOne(t => t.User).WithMany(u => u.Tasks)
-                .HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(t => t.Category).WithMany()
-                .HasForeignKey(t => t.CategoryId).OnDelete(DeleteBehavior.SetNull);
-        });
-
-        modelBuilder.Entity<HabitCompletion>(e =>
-        {
-            e.HasIndex(h => new { h.TaskItemId, h.Date }).IsUnique();
-            e.HasOne(h => h.TaskItem).WithMany(t => t.HabitCompletions)
-                .HasForeignKey(h => h.TaskItemId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Transaction>(e =>

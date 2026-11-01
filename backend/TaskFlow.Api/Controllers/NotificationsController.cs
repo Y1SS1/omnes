@@ -30,7 +30,7 @@ public class NotificationsController : ControllerBase
             .OrderByDescending(n => n.CreatedAt)
             .Take(50)
             .ToListAsync();
-        return items.Select(n => new NotificationDto(n.Id, n.Message, n.RelatedTaskId, n.IsRead, n.CreatedAt)).ToList();
+        return items.Select(n => new NotificationDto(n.Id, n.Message, n.IsRead, n.CreatedAt)).ToList();
     }
 
     [HttpPost("{id}/read")]

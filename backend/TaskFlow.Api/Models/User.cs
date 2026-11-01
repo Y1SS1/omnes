@@ -7,10 +7,11 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public UserRole Role { get; set; } = UserRole.Trabajador;
+    public string? JobTitle { get; set; }
 
     public Wallet? Wallet { get; set; }
     public ICollection<Category> Categories { get; set; } = new List<Category>();
-    public ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     public ICollection<Budget> Budgets { get; set; } = new List<Budget>();
     public ICollection<SavingsMovement> SavingsMovements { get; set; } = new List<SavingsMovement>();

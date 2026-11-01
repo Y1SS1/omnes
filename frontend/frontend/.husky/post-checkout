@@ -1,0 +1,7 @@
+prev_head="$1"
+new_head="$2"
+branch_checkout="$3"
+if [ "$branch_checkout" = "1" ] && git diff --name-only "$prev_head" "$new_head" | grep -q "frontend/package-lock.json"; then
+  echo "package-lock.json cambió al cambiar de rama, corriendo npm install..."
+  npm --prefix frontend install
+fi

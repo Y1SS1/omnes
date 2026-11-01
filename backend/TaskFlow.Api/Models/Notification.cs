@@ -9,7 +9,6 @@ public class Notification
     public User? User { get; set; }
 
     public string Message { get; set; } = string.Empty;
-    public Guid? RelatedTaskId { get; set; }
     public bool IsRead { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
