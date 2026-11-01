@@ -9,6 +9,7 @@ import type { NotificationDto } from "../api/types";
 const navItems = [
   { to: "/", label: "Inicio", icon: "🏠", end: true },
   { to: "/wallet", label: "Billetera", icon: "💰" },
+  { to: "/presupuestos", label: "Presupuestos", icon: "📊" },
   { to: "/reports", label: "Reportes", icon: "📈" },
 ];
 

@@ -8,6 +8,8 @@ import RegisterWorkerPage from "./pages/RegisterWorkerPage";
 import DashboardPage from "./pages/DashboardPage";
 import WalletPage from "./pages/WalletPage";
 import ReportsPage from "./pages/ReportsPage";
+import BudgetProjectsPage from "./pages/BudgetProjectsPage";
+import BudgetProjectPage from "./pages/BudgetProjectPage";
 import WorkersAdminPage from "./pages/WorkersAdminPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -41,6 +43,8 @@ function AppRoutes() {
         <Route path="/budget" element={<Navigate to="/wallet" replace />} />
         <Route path="/savings" element={<Navigate to="/wallet" replace />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/presupuestos" element={<BudgetProjectsPage />} />
+        <Route path="/presupuestos/:id" element={<BudgetProjectPage />} />
         <Route
           path="/trabajadores"
           element={

@@ -33,6 +33,40 @@ export interface BudgetProgressDto {
   color: "green" | "yellow" | "red";
 }
 
+export type BudgetItemType = "Asset" | "Liability";
+
+export interface BudgetQuoteBlocks {
+  priceRange: string;
+  bestValue: string;
+  suppliers: string;
+  sources: string | null;
+}
+
+export interface BudgetItemDto {
+  id: string;
+  name: string;
+  type: BudgetItemType;
+  category: string;
+  estimatedAmount: number;
+  aiQuoteSummary: string | null;
+  aiQuotedAt: string | null;
+  quote: BudgetQuoteBlocks | null;
+}
+
+export interface BudgetProjectDto {
+  id: string;
+  name: string;
+  createdAt: string;
+  items: BudgetItemDto[];
+}
+
+export interface BudgetProjectSummaryDto {
+  id: string;
+  name: string;
+  createdAt: string;
+  itemCount: number;
+}
+
 export interface SavingsGoalDto {
   id: string;
   name: string;
