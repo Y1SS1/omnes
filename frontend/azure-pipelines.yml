@@ -10,12 +10,26 @@ steps:
   - task: NodeTool@0
     inputs:
       versionSpec: "20.x"
+
   - script: npm ci
     workingDirectory: frontend
     displayName: "npm ci"
+
   - script: npx tsc -b --noEmit
     workingDirectory: frontend
     displayName: "type-check"
+
   - script: npm run build
     workingDirectory: frontend
     displayName: "npm run build"
+
+  - script: npx -y @lhci/cli collect --staticDistDir=dist --numberOfRuns=1
+    workingDirectory: frontend
+    displayName: "Run Lighthouse audit"
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: "frontend/.lighthouseci"
+      artifact: "LighthouseReport"
+      publishLocation: "pipeline"
+    displayName: "Publish Lighthouse report"

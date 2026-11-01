@@ -35,3 +35,6 @@ npm-debug.log*
 
 # SonarQube Scanner
 .sonarqube/
+
+# Lighthouse CI
+.lighthouseci/
