@@ -46,6 +46,66 @@ namespace TaskFlow.Api.Migrations
                     b.ToTable("Budgets");
                 });
 
+            modelBuilder.Entity("TaskFlow.Api.Models.BudgetItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AiQuoteSummary")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("AiQuotedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("BudgetProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("EstimatedAmount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetProjectId");
+
+                    b.ToTable("BudgetItems");
+                });
+
+            modelBuilder.Entity("TaskFlow.Api.Models.BudgetProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BudgetProjects");
+                });
+
             modelBuilder.Entity("TaskFlow.Api.Models.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -289,6 +349,28 @@ namespace TaskFlow.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TaskFlow.Api.Models.BudgetItem", b =>
+                {
+                    b.HasOne("TaskFlow.Api.Models.BudgetProject", "BudgetProject")
+                        .WithMany("Items")
+                        .HasForeignKey("BudgetProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BudgetProject");
+                });
+
+            modelBuilder.Entity("TaskFlow.Api.Models.BudgetProject", b =>
+                {
+                    b.HasOne("TaskFlow.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TaskFlow.Api.Models.Category", b =>
                 {
                     b.HasOne("TaskFlow.Api.Models.User", "User")
@@ -378,6 +460,11 @@ namespace TaskFlow.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskFlow.Api.Models.BudgetProject", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("TaskFlow.Api.Models.SavingsGoal", b =>

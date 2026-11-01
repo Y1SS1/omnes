@@ -18,3 +18,9 @@ public enum UserRole
     Trabajador = 0,
     Admin = 1
 }
+
+public enum BudgetItemType
+{
+    Asset = 0,
+    Liability = 1
+}

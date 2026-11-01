@@ -16,6 +16,8 @@ public class AppDbContext : DbContext
     public DbSet<SavingsPlan> SavingsPlans => Set<SavingsPlan>();
     public DbSet<SavingsGoal> SavingsGoals => Set<SavingsGoal>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<BudgetProject> BudgetProjects => Set<BudgetProject>();
+    public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,6 +89,20 @@ public class AppDbContext : DbContext
         {
             e.HasOne(n => n.User).WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BudgetProject>(e =>
+        {
+            e.HasIndex(p => p.UserId);
+            e.HasOne(p => p.User).WithMany()
+                .HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BudgetItem>(e =>
+        {
+            e.Property(i => i.EstimatedAmount).HasPrecision(14, 2);
+            e.HasOne(i => i.BudgetProject).WithMany(p => p.Items)
+                .HasForeignKey(i => i.BudgetProjectId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
