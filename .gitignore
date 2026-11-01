@@ -32,3 +32,9 @@ frontend/.env.production
 # Logs
 *.log
 npm-debug.log*
+
+# SonarQube Scanner
+.sonarqube/
+
+# Lighthouse CI
+.lighthouseci/

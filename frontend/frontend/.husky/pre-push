@@ -1,2 +1,9 @@
+#!/bin/sh
 echo "Verificando que el proyecto compile antes de pushear..."
-(cd frontend && npx tsc -b --noEmit)
+if [ -d "frontend/frontend" ]; then
+  (cd frontend/frontend && npx tsc -b --noEmit)
+elif [ -d "frontend" ]; then
+  (cd frontend && npx tsc -b --noEmit)
+else
+  npx tsc -b --noEmit
+fi

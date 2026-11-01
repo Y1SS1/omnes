@@ -11,26 +11,62 @@ steps:
     inputs:
       packageType: "sdk"
       version: "8.x"
+
+  - script: |
+      dotnet tool install --global dotnet-sonarscanner
+      dotnet tool install --global dotnet-reportgenerator-globaltool
+      echo "##vso[task.prependpath]$HOME/.dotnet/tools"
+    displayName: "Install CLI tools (SonarScanner & ReportGenerator)"
+
   - script: dotnet restore TaskFlow.sln
     displayName: "dotnet restore"
+
+  - script: >
+      dotnet sonarscanner begin
+      /k:"Omnes_Back"
+      /o:"y1ss1"
+      /d:sonar.token="$(SONAR_TOKEN)"
+      /d:sonar.host.url="https://sonarcloud.io"
+      /d:sonar.cs.opencover.reportsPaths="$(Agent.TempDirectory)/coverage/**/coverage.opencover.xml"
+    displayName: "SonarScanner begin"
+
   - script: dotnet build TaskFlow.sln --no-restore --configuration Release
     displayName: "dotnet build"
+
   - script: >
       dotnet test TaskFlow.Api.Tests --no-build --configuration Release
-      --collect:"XPlat Code Coverage"
+      --collect:"XPlat Code Coverage;Format=opencover,cobertura"
       --results-directory $(Agent.TempDirectory)/coverage
     displayName: "dotnet test + coverage"
+
+  - script: dotnet sonarscanner end /d:sonar.token="$(SONAR_TOKEN)"
+    displayName: "SonarScanner end"
+
   - script: |
-      dotnet tool install --global dotnet-reportgenerator-globaltool
-      export PATH="$PATH:$HOME/.dotnet/tools"
       reportgenerator \
         -reports:"$(Agent.TempDirectory)/coverage/**/coverage.cobertura.xml" \
         -targetdir:"$(Build.SourcesDirectory)/CoverageReport" \
         -reporttypes:"HtmlInline_AzurePipelines;Cobertura" \
         -classfilters:"-*Migrations*"
     displayName: "Generate coverage report"
+
   - task: PublishCodeCoverageResults@2
     inputs:
       summaryFileLocation: "$(Build.SourcesDirectory)/CoverageReport/Cobertura.xml"
       pathToSources: "$(Build.SourcesDirectory)/TaskFlow.Api"
     displayName: "Publish coverage report"
+
+  - script: |
+      docker run --rm -v $(Build.SourcesDirectory):/zap/wrk/:rw \
+        -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+        -t https://omnes-api-vyissim.azurewebsites.net \
+        -r zap-report.html -I || true
+    displayName: "Run OWASP ZAP Baseline Security Scan"
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: "$(Build.SourcesDirectory)/zap-report.html"
+      artifact: "ZAPSecurityReport"
+      publishLocation: "pipeline"
+    condition: always()
+    displayName: "Publish OWASP ZAP Security report"
