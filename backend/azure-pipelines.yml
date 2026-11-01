@@ -55,3 +55,18 @@ steps:
       summaryFileLocation: "$(Build.SourcesDirectory)/CoverageReport/Cobertura.xml"
       pathToSources: "$(Build.SourcesDirectory)/TaskFlow.Api"
     displayName: "Publish coverage report"
+
+  - script: |
+      docker run --rm -v $(Build.SourcesDirectory):/zap/wrk/:rw \
+        -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+        -t https://omnes-api-vyissim.azurewebsites.net \
+        -r zap-report.html -I || true
+    displayName: "Run OWASP ZAP Baseline Security Scan"
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: "$(Build.SourcesDirectory)/zap-report.html"
+      artifact: "ZAPSecurityReport"
+      publishLocation: "pipeline"
+    condition: always()
+    displayName: "Publish OWASP ZAP Security report"
