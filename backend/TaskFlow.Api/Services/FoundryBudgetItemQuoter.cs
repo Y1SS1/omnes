@@ -4,11 +4,12 @@ using System.Text.RegularExpressions;
 
 namespace TaskFlow.Api.Services;
 
-public class FoundryBudgetItemQuoter : IBudgetItemQuoter
+public partial class FoundryBudgetItemQuoter : IBudgetItemQuoter
 {
     private const string RetryMessage = "No se pudo cotizar este ítem con IA. Intenta de nuevo.";
     private const int MaxSources = 5;
     private const int MaxOutputTokens = 4000;
+    private const int RegexTimeoutMilliseconds = 1000;
 
     private const string Instructions = """
         Responde solo con los campos pedidos, breves y sin links, citas, notas ni ofertas de ayuda adicional.
@@ -50,7 +51,15 @@ public class FoundryBudgetItemQuoter : IBudgetItemQuoter
             throw new BudgetQuoteException(RetryMessage);
         }
 
-        var summary = BuildSummary(response.OutputText(), PickSources(response.WebSourceUrls()));
+        string? summary;
+        try
+        {
+            summary = BuildSummary(response.OutputText(), PickSources(response.WebSourceUrls()));
+        }
+        catch (RegexMatchTimeoutException ex)
+        {
+            throw new BudgetQuoteException(RetryMessage, ex);
+        }
         if (summary is null)
         {
             _logger.LogError("Foundry quote did not follow the requested format");
@@ -83,12 +92,24 @@ public class FoundryBudgetItemQuoter : IBudgetItemQuoter
     // The model still adds citations sometimes, despite being told not to.
     public static string CleanField(string? text)
     {
-        var clean = Regex.Replace(text ?? "", @"\(?\[[^\]]*\]\([^)]*\)\)?", " ");
-        clean = Regex.Replace(clean, @"https?://\S+", " ");
-        clean = Regex.Replace(clean, @"\s+", " ");
-        clean = Regex.Replace(clean, @"\s+([.,;])", "$1");
+        var clean = MarkdownCitation().Replace(text ?? "", " ");
+        clean = BareUrl().Replace(clean, " ");
+        clean = Whitespace().Replace(clean, " ");
+        clean = SpaceBeforePunctuation().Replace(clean, "$1");
         return clean.Trim().TrimEnd('.', ' ');
     }
+
+    [GeneratedRegex(@"\(?\[[^\]]*\]\([^)]*\)\)?", RegexOptions.None, RegexTimeoutMilliseconds)]
+    private static partial Regex MarkdownCitation();
+
+    [GeneratedRegex(@"https?://\S+", RegexOptions.None, RegexTimeoutMilliseconds)]
+    private static partial Regex BareUrl();
+
+    [GeneratedRegex(@"\s+", RegexOptions.None, RegexTimeoutMilliseconds)]
+    private static partial Regex Whitespace();
+
+    [GeneratedRegex(@"\s+([.,;])", RegexOptions.None, RegexTimeoutMilliseconds)]
+    private static partial Regex SpaceBeforePunctuation();
 
     // Chilean government sites first, then other Chilean sites, as they are the most relevant for a Chilean price.
     public static IReadOnlyList<string> PickSources(IEnumerable<string> urls) => urls

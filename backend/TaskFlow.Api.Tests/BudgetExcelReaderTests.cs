@@ -57,7 +57,7 @@ public class BudgetExcelReaderTests
         var result = BudgetExcelReader.Read(stream);
 
         Assert.Empty(result.Errors);
-        Assert.Equal(new[] { 2, 4 }, result.Rows.Select(r => r.RowNumber));
+        Assert.Equal([2, 4], result.Rows.Select(r => r.RowNumber));
     }
 
     [Fact]

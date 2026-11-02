@@ -60,7 +60,7 @@ public class BudgetProjectsControllerTests
         return (new BudgetProjectsController(db, TestHelpers.NewCurrentUser(userId), classifier, quoter), db, userId, classifier, quoter);
     }
 
-    private static IFormFile ValidFile(string fileName = "presupuesto.xlsx")
+    private static FormFile ValidFile(string fileName = "presupuesto.xlsx")
     {
         var stream = TestHelpers.NewBudgetExcel(
             ["Nombre", "Categoría", "Monto estimado"],

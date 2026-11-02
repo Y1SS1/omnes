@@ -24,8 +24,14 @@ frontend/               SPA (React + TS + Vite)
 ## Backend
 
 1. Crea una base de datos PostgreSQL (por ejemplo `taskflow_dev`).
-2. Ajusta la cadena de conexión en `backend/TaskFlow.Api/appsettings.json` (`ConnectionStrings:DefaultConnection`) con tu host/usuario/contraseña.
-3. **Cambia `Jwt:Key`** en `appsettings.json` por un valor propio antes de desplegar a producción (el valor incluido es solo para desarrollo local). En producción, usa variables de entorno o Azure App Configuration/Key Vault en vez de dejarlo en el archivo.
+2. Si tu base no es la local por defecto, ajusta la cadena de conexión en `backend/TaskFlow.Api/appsettings.Development.json` (`ConnectionStrings:DefaultConnection`). No escribas contraseñas ahí: usa `dotnet user-secrets`.
+3. Configura los secretos locales desde `backend/TaskFlow.Api`. El repositorio no incluye claves, y sin `Jwt:Key` la API no arranca. En producción van como App Settings (`Jwt__Key`, `Foundry__ApiKey`):
+
+   ```bash
+   dotnet user-secrets set "Jwt:Key" "una-clave-propia-de-al-menos-32-caracteres"
+   dotnet user-secrets set "Foundry:ApiKey" "la-key-de-microsoft-foundry"
+   ```
+
 4. Ejecuta:
 
 ```bash

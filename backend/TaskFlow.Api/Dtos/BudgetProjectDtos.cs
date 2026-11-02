@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TaskFlow.Api.Models;
 using TaskFlow.Api.Services;
 
@@ -18,4 +19,4 @@ public record BudgetProjectDto(Guid Id, string Name, DateTime CreatedAt, IReadOn
 
 public record BudgetProjectSummaryDto(Guid Id, string Name, DateTime CreatedAt, int ItemCount);
 
-public record UpdateBudgetItemTypeRequest(BudgetItemType Type);
+public record UpdateBudgetItemTypeRequest([property: JsonRequired] BudgetItemType Type);

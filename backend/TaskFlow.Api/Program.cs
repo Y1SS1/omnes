@@ -30,6 +30,9 @@ builder.Services.AddScoped<IBudgetItemClassifier, FoundryBudgetItemClassifier>()
 builder.Services.AddScoped<IBudgetItemQuoter, FoundryBudgetItemQuoter>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
+// Checked here because the JWT options below only run on the first authenticated request.
+var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException(
+    "Falta Jwt:Key. En desarrollo configurala con 'dotnet user-secrets'; en produccion, como Jwt__Key.");
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,7 +47,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSection["Issuer"],
         ValidAudience = jwtSection["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
     };
 });
 builder.Services.AddAuthorization();
@@ -53,7 +56,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:5173" })
+        policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:5173"])
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -64,16 +67,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    await db.Database.MigrateAsync();
 
     // Covers the case where this account was created before the Admin role
     // existed, or before AppConstants.AdminEmail changed - registering fresh
     // already assigns it correctly.
-    var adminUser = db.Users.FirstOrDefault(u => u.Email == TaskFlow.Api.AppConstants.AdminEmail);
+    var adminUser = await db.Users.FirstOrDefaultAsync(u => u.Email == TaskFlow.Api.AppConstants.AdminEmail);
     if (adminUser is not null && adminUser.Role != TaskFlow.Api.Models.UserRole.Admin)
     {
         adminUser.Role = TaskFlow.Api.Models.UserRole.Admin;
-        db.SaveChanges();
+        await db.SaveChangesAsync();
     }
 }
 
@@ -95,7 +98,11 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:;");
+    // Swagger UI, which only runs in development, needs more than the React app allows.
+    if (!app.Environment.IsDevelopment())
+    {
+        context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';");
+    }
     await next();
 });
 
@@ -130,4 +137,4 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
 
-app.Run();
+await app.RunAsync();

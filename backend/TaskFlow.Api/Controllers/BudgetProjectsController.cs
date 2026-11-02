@@ -12,7 +12,7 @@ namespace TaskFlow.Api.Controllers;
 [ApiController]
 [Authorize]
 [Route("api/budget-projects")]
-public class BudgetProjectsController : ControllerBase
+public partial class BudgetProjectsController : ControllerBase
 {
     private const long MaxFileBytes = 5 * 1024 * 1024;
     public const int MaxQuotedProjectsPerDay = 3;
@@ -187,9 +187,12 @@ public class BudgetProjectsController : ControllerBase
 
     private static string ExportFileName(string projectName)
     {
-        var safeName = Regex.Replace(projectName, @"[^\p{L}\p{N} _-]", "").Trim();
+        var safeName = UnsafeFileNameCharacters().Replace(projectName, "").Trim();
         return safeName.Length == 0 ? "Presupuesto actualizado.xlsx" : $"Presupuesto actualizado - {safeName}.xlsx";
     }
+
+    [GeneratedRegex(@"[^\p{L}\p{N} _-]", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex UnsafeFileNameCharacters();
 
     private static BudgetProjectDto ToDto(BudgetProject project) => new(
         project.Id,
