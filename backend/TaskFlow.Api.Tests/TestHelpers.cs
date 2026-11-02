@@ -18,18 +18,8 @@ public static class TestHelpers
         return new AppDbContext(options);
     }
 
-    public static JwtTokenService NewJwtService()
-    {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:Key"] = "test-only-key-not-used-in-production-0123456789",
-                ["Jwt:Issuer"] = "TaskFlowApi.Tests",
-                ["Jwt:Audience"] = "TaskFlowClient.Tests",
-            })
-            .Build();
-        return new JwtTokenService(config);
-    }
+    public static JwtTokenService NewJwtService() => new(new JwtSettings(
+        "test-only-key-not-used-in-production-0123456789", "TaskFlowApi.Tests", "TaskFlowClient.Tests"));
 
     public static CurrentUserService NewCurrentUser(Guid userId)
     {

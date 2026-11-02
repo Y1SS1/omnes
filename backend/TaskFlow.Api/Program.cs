@@ -33,6 +33,7 @@ var jwtSection = builder.Configuration.GetSection("Jwt");
 // Checked here because the JWT options below only run on the first authenticated request.
 var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException(
     "Falta Jwt:Key. En desarrollo configurala con 'dotnet user-secrets'; en produccion, como Jwt__Key.");
+builder.Services.AddSingleton(new JwtSettings(jwtKey, jwtSection["Issuer"], jwtSection["Audience"]));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

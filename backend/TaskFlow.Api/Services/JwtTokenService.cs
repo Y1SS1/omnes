@@ -6,20 +6,21 @@ using TaskFlow.Api.Models;
 
 namespace TaskFlow.Api.Services;
 
+// Read and validated once at startup, in Program.cs.
+public record JwtSettings(string Key, string? Issuer, string? Audience);
+
 public class JwtTokenService
 {
-    private readonly IConfiguration _config;
+    private readonly JwtSettings _settings;
 
-    public JwtTokenService(IConfiguration config)
+    public JwtTokenService(JwtSettings settings)
     {
-        _config = config;
+        _settings = settings;
     }
 
     public string GenerateToken(User user)
     {
-        var jwtSection = _config.GetSection("Jwt");
-        var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Falta Jwt:Key.");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -31,8 +32,8 @@ public class JwtTokenService
         };
 
         var token = new JwtSecurityToken(
-            issuer: jwtSection["Issuer"],
-            audience: jwtSection["Audience"],
+            issuer: _settings.Issuer,
+            audience: _settings.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddDays(7),
             signingCredentials: creds);
