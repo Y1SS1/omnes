@@ -28,7 +28,7 @@ public class NotificationsControllerTests
 
         var result = await controller.GetAll();
 
-        var list = Assert.IsAssignableFrom<List<NotificationDto>>(result.Value);
+        var list = Assert.IsType<List<NotificationDto>>(result.Value, exactMatch: false);
         Assert.Equal(2, list.Count);
         Assert.Equal("Segunda", list[0].Message);
     }

@@ -64,7 +64,7 @@ public class ReportsControllerTests
 
         var result = await controller.ExpensesByCategory(2026, 10);
 
-        var list = Assert.IsAssignableFrom<List<ExpenseCategorySlice>>(result.Value);
+        var list = Assert.IsType<List<ExpenseCategorySlice>>(result.Value, exactMatch: false);
         Assert.Equal(2, list.Count);
         Assert.Equal("Comida", list[0].CategoryName);
         Assert.Equal(300m, list[0].Amount);

@@ -120,7 +120,7 @@ public class TransactionsControllerTests
 
         var result = await controller.GetAll(2026, 10);
 
-        var list = Assert.IsAssignableFrom<List<TransactionDto>>(result.Value);
+        var list = Assert.IsType<List<TransactionDto>>(result.Value, exactMatch: false);
         Assert.Single(list);
         Assert.Equal(200m, list[0].Amount);
     }

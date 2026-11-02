@@ -179,7 +179,7 @@ public class BudgetProjectsControllerTests
         var result = await controller.List();
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var list = Assert.IsAssignableFrom<IReadOnlyList<BudgetProjectSummaryDto>>(ok.Value);
+        var list = Assert.IsType<IReadOnlyList<BudgetProjectSummaryDto>>(ok.Value, exactMatch: false);
         Assert.Equal(1, Assert.Single(list).ItemCount);
     }
 

@@ -40,7 +40,7 @@ public class CategoriesControllerTests
 
         var result = await controller.GetAll(null);
 
-        var list = Assert.IsAssignableFrom<List<CategoryDto>>(result.Value);
+        var list = Assert.IsType<List<CategoryDto>>(result.Value, exactMatch: false);
         Assert.Single(list);
         Assert.Equal("Mía", list[0].Name);
     }
@@ -55,7 +55,7 @@ public class CategoriesControllerTests
 
         var result = await controller.GetAll(CategoryType.Expense);
 
-        var list = Assert.IsAssignableFrom<List<CategoryDto>>(result.Value);
+        var list = Assert.IsType<List<CategoryDto>>(result.Value, exactMatch: false);
         Assert.Single(list);
         Assert.Equal("Gasto", list[0].Name);
     }
@@ -68,11 +68,11 @@ public class CategoriesControllerTests
         var first = await controller.GetAll(CategoryType.Income);
         var second = await controller.GetAll(CategoryType.Income);
 
-        Assert.True(Assert.IsAssignableFrom<List<CategoryDto>>(first.Value).Count >= 5);
+        Assert.True(Assert.IsType<List<CategoryDto>>(first.Value, exactMatch: false).Count >= 5);
         // calling it again must not duplicate the seeded categories
         Assert.Equal(
-            Assert.IsAssignableFrom<List<CategoryDto>>(first.Value).Count,
-            Assert.IsAssignableFrom<List<CategoryDto>>(second.Value).Count
+            Assert.IsType<List<CategoryDto>>(first.Value, exactMatch: false).Count,
+            Assert.IsType<List<CategoryDto>>(second.Value, exactMatch: false).Count
         );
     }
 

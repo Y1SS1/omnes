@@ -18,7 +18,8 @@ public class JwtTokenService
     public string GenerateToken(User user)
     {
         var jwtSection = _config.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!));
+        var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Falta Jwt:Key.");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]

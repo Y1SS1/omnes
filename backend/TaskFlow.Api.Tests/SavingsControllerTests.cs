@@ -87,7 +87,7 @@ public class SavingsControllerTests
 
         var result = await controller.GetGoals();
 
-        var list = Assert.IsAssignableFrom<List<SavingsGoalDto>>(result.Value);
+        var list = Assert.IsType<List<SavingsGoalDto>>(result.Value, exactMatch: false);
         var dto = Assert.Single(list);
         Assert.Equal(200m, dto.SavedAmount);
     }
@@ -104,7 +104,7 @@ public class SavingsControllerTests
 
         var result = await controller.GetMovements(goal.Id);
 
-        var list = Assert.IsAssignableFrom<List<SavingsMovementDto>>(result.Value);
+        var list = Assert.IsType<List<SavingsMovementDto>>(result.Value, exactMatch: false);
         Assert.Single(list);
         Assert.Equal(100m, list[0].Amount);
     }
