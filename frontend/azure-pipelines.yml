@@ -6,30 +6,64 @@ trigger:
 pool:
   vmImage: "ubuntu-latest"
 
-steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: "20.x"
+# Two stages so the run page shows a timeline: build, then the Lighthouse audit.
+stages:
+  - stage: Build
+    displayName: "Compilar"
+    jobs:
+      - job: Build
+        displayName: "npm ci, type-check y build"
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
 
-  - script: npm ci
-    workingDirectory: frontend
-    displayName: "npm ci"
+          - script: npm ci
+            workingDirectory: frontend
+            displayName: "npm ci"
 
-  - script: npx tsc -b --noEmit
-    workingDirectory: frontend
-    displayName: "type-check"
+          - script: npx tsc -b --noEmit
+            workingDirectory: frontend
+            displayName: "type-check"
 
-  - script: npm run build
-    workingDirectory: frontend
-    displayName: "npm run build"
+          - script: npm run build
+            workingDirectory: frontend
+            displayName: "npm run build"
 
-  - script: npx -y @lhci/cli collect --staticDistDir=dist --numberOfRuns=1
-    workingDirectory: frontend
-    displayName: "Run Lighthouse audit"
+          # The next stage runs on a fresh machine, so it gets the build as an artifact.
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "frontend/dist"
+              artifact: "dist"
+              publishLocation: "pipeline"
+            displayName: "Publish build (dist)"
 
-  - task: PublishPipelineArtifact@1
-    inputs:
-      targetPath: "frontend/.lighthouseci"
-      artifact: "LighthouseReport"
-      publishLocation: "pipeline"
-    displayName: "Publish Lighthouse report"
+  - stage: Quality
+    displayName: "Calidad (Lighthouse)"
+    dependsOn: Build
+    jobs:
+      - job: Lighthouse
+        displayName: "Auditoría Lighthouse"
+        steps:
+          - checkout: none
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: "dist"
+              path: "$(Pipeline.Workspace)/dist"
+            displayName: "Download build (dist)"
+
+          - script: npx -y @lhci/cli collect --staticDistDir=dist --numberOfRuns=1
+            workingDirectory: $(Pipeline.Workspace)
+            displayName: "Run Lighthouse audit"
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Pipeline.Workspace)/.lighthouseci"
+              artifact: "LighthouseReport"
+              publishLocation: "pipeline"
+            displayName: "Publish Lighthouse report"
