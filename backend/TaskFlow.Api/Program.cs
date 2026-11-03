@@ -134,8 +134,25 @@ app.MapControllers();
 
 // Serve the built React app (wwwroot) from the same host as the API, so the
 // whole product lives behind a single Azure URL with no cross-origin setup.
+// index.html must be re-checked on every visit so a new deploy shows up right away;
+// the files in /assets have a hash in their name, so they can be cached for good.
+var spaFiles = new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var headers = ctx.Context.Response.Headers;
+        if (ctx.File.Name.Equals("index.html", StringComparison.OrdinalIgnoreCase))
+        {
+            headers.CacheControl = "no-cache";
+        }
+        else if (ctx.Context.Request.Path.StartsWithSegments("/assets"))
+        {
+            headers.CacheControl = "public, max-age=31536000, immutable";
+        }
+    },
+};
 app.UseDefaultFiles();
-app.UseStaticFiles();
-app.MapFallbackToFile("index.html");
+app.UseStaticFiles(spaFiles);
+app.MapFallbackToFile("index.html", spaFiles);
 
 await app.RunAsync();
