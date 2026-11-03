@@ -4,7 +4,7 @@ trigger:
       - main
 
 pool:
-  vmImage: "ubuntu-latest"
+  vmImage: "ubuntu-24.04"
 
 # Two stages so the run page shows a timeline: build/test/quality, then security.
 stages:

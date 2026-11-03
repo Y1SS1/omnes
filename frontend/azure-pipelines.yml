@@ -4,7 +4,7 @@ trigger:
       - main
 
 pool:
-  vmImage: "ubuntu-latest"
+  vmImage: "ubuntu-24.04"
 
 # Two stages so the run page shows a timeline: build, then the Lighthouse audit.
 stages:
@@ -14,9 +14,9 @@ stages:
       - job: Build
         displayName: "npm ci, type-check y build"
         steps:
-          - task: NodeTool@0
+          - task: UseNode@1
             inputs:
-              versionSpec: "20.x"
+              version: "20.x"
 
           - script: npm ci
             workingDirectory: frontend
@@ -47,9 +47,9 @@ stages:
         steps:
           - checkout: none
 
-          - task: NodeTool@0
+          - task: UseNode@1
             inputs:
-              versionSpec: "20.x"
+              version: "20.x"
 
           - task: DownloadPipelineArtifact@2
             inputs:
