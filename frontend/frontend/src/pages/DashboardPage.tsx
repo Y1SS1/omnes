@@ -37,19 +37,19 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <h2 className="font-semibold mb-3">Billetera</h2>
+          <h2 className="text-lg font-extrabold mb-3">Billetera</h2>
           <p className="text-sm text-mid-gray">Saldo disponible</p>
-          <p className="text-3xl font-bold text-ink mb-4">
+          <p className="font-display text-4xl font-extrabold tracking-tight tabular-nums text-ink mb-4">
             {wallet !== null ? formatMoney(wallet.balance) : "—"}
           </p>
           <p className="text-sm text-mid-gray">Fondo de ahorro</p>
-          <p className="text-xl font-semibold text-ink">
+          <p className="font-display text-2xl font-bold tabular-nums text-ink">
             {wallet !== null ? formatMoney(wallet.savingsFund) : "—"}
           </p>
         </Card>
 
         <Card>
-          <h2 className="font-semibold mb-3">Presupuesto del mes</h2>
+          <h2 className="text-lg font-extrabold mb-3">Presupuesto del mes</h2>
           {budget && budget.limitAmount > 0 ? (
             <>
               <ProgressBar percent={budget.percentUsed} color={budget.color} />
@@ -63,7 +63,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card>
-          <h2 className="font-semibold mb-3">Metas de ahorro</h2>
+          <h2 className="text-lg font-extrabold mb-3">Metas de ahorro</h2>
           {savingsGoals.length === 0 ? (
             <p className="text-sm text-mid-gray">No tienes metas de ahorro creadas.</p>
           ) : (
@@ -87,7 +87,7 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="lg:col-span-3">
-          <h2 className="font-semibold mb-3">Movimientos recientes</h2>
+          <h2 className="text-lg font-extrabold mb-3">Movimientos recientes</h2>
           {recentTransactions.length === 0 ? (
             <p className="text-sm text-mid-gray">Todavía no registras movimientos.</p>
           ) : (
@@ -98,7 +98,7 @@ export default function DashboardPage() {
                     {t.categoryColor && <ColorDot color={t.categoryColor} />}
                     <span className="truncate text-ink">{t.categoryName ?? t.description ?? "Movimiento"}</span>
                   </div>
-                  <span className={t.type === "Income" ? "text-emerald-600 font-medium" : "text-ink"}>
+                  <span className={`tabular-nums ${t.type === "Income" ? "text-mint font-semibold" : "text-ink"}`}>
                     {t.type === "Income" ? "+" : "-"}
                     {formatMoney(t.amount)}
                   </span>

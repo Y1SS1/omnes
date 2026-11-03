@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bell, ChartLine, FileSpreadsheet, House, Menu, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Logo } from "./Logo";
@@ -6,11 +7,13 @@ import { Avatar } from "./ui";
 import * as notificationsApi from "../api/notifications";
 import type { NotificationDto } from "../api/types";
 
-const navItems = [
-  { to: "/", label: "Inicio", icon: "🏠", end: true },
-  { to: "/wallet", label: "Billetera", icon: "💰" },
-  { to: "/presupuestos", label: "Presupuestos", icon: "📊" },
-  { to: "/reports", label: "Reportes", icon: "📈" },
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
+
+const navItems: NavItem[] = [
+  { to: "/", label: "Inicio", icon: House, end: true },
+  { to: "/wallet", label: "Billetera", icon: Wallet },
+  { to: "/presupuestos", label: "Presupuestos", icon: FileSpreadsheet },
+  { to: "/reports", label: "Reportes", icon: ChartLine },
 ];
 
 export default function Layout() {
@@ -27,7 +30,7 @@ export default function Layout() {
   const notifBtnMobileRef = useRef<HTMLButtonElement>(null);
   const notifPanelRef = useRef<HTMLDivElement>(null);
 
-  const items = isAdmin ? [...navItems, { to: "/trabajadores", label: "Trabajadores", icon: "🧑‍💼" }] : navItems;
+  const items = isAdmin ? [...navItems, { to: "/trabajadores", label: "Trabajadores", icon: Users }] : navItems;
 
   const loadNotifications = async () => {
     try {
@@ -86,25 +89,29 @@ export default function Layout() {
   };
 
   const pillClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-      isActive
-        ? "bg-ink border-ink text-white"
-        : "border-hairline text-mid-gray hover:border-neutral-400 hover:text-ink"
+    `flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+      isActive ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
     }`;
+
+  const unreadBadge = unreadCount > 0 && (
+    <span className="absolute -top-0.5 -right-0.5 bg-tangerine text-white text-[10px] font-bold rounded-full h-4 min-w-4 px-1 flex items-center justify-center">
+      {unreadCount}
+    </span>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-hairline bg-paper px-4 md:px-6 relative">
+      <header className="bg-ink text-white px-4 md:px-6 relative">
         <div className="h-16 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <Logo width={28} height={28} />
-            <span className="text-lg font-semibold tracking-tight text-ink hidden sm:inline">Omnes</span>
+          <Link to="/" aria-label="Omnes, ir al inicio" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+            <Logo width={28} height={28} core="#ffffff" />
+            <span className="font-display text-xl font-extrabold tracking-tight hidden sm:inline">Omnes</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2 overflow-x-auto flex-1 min-w-0 ml-36">
+          <nav className="hidden md:flex items-center gap-1 overflow-x-auto flex-1 min-w-0 ml-10">
             {items.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={pillClass}>
-                <span>{item.icon}</span>
+                <item.icon size={16} aria-hidden="true" />
                 {item.label}
               </NavLink>
             ))}
@@ -112,45 +119,38 @@ export default function Layout() {
 
           <button
             onClick={() => setMenuOpen((s) => !s)}
-            className="md:hidden ml-auto text-mid-gray hover:text-ink p-2"
-            aria-label="Abrir menú"
+            className="md:hidden ml-auto rounded-full p-2 text-[#c9c7f0] hover:bg-white/10 hover:text-white"
+            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={menuOpen}
           >
-            ☰
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
 
           <div className="hidden md:flex items-center gap-2 ml-auto shrink-0">
             {user && (
-              <button ref={userMenuBtnRef} onClick={() => setShowUserMenu((s) => !s)} aria-label="Cuenta">
+              <button ref={userMenuBtnRef} onClick={() => setShowUserMenu((s) => !s)} aria-label="Cuenta" className="rounded-full ring-2 ring-white/20 hover:ring-highlight">
                 <Avatar name={user.displayName} id={user.userId} size={32} />
               </button>
             )}
             <button
               ref={notifBtnDesktopRef}
               onClick={() => setShowNotifications((s) => !s)}
-              className="relative rounded-full p-2 hover:bg-canvas"
+              className="relative rounded-full p-2 text-[#c9c7f0] hover:bg-white/10 hover:text-white"
               aria-label="Notificaciones"
             >
-              🔔
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
+              <Bell size={20} aria-hidden="true" />
+              {unreadBadge}
             </button>
           </div>
 
           <button
             ref={notifBtnMobileRef}
             onClick={() => setShowNotifications((s) => !s)}
-            className="md:hidden relative rounded-full p-2 hover:bg-canvas"
+            className="md:hidden relative rounded-full p-2 text-[#c9c7f0] hover:bg-white/10 hover:text-white"
             aria-label="Notificaciones"
           >
-            🔔
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
+            <Bell size={20} aria-hidden="true" />
+            {unreadBadge}
           </button>
         </div>
 
@@ -163,21 +163,21 @@ export default function Layout() {
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-[18px] px-3 py-2 text-sm font-medium ${
-                    isActive ? "bg-ink text-white" : "text-mid-gray hover:bg-canvas hover:text-ink"
+                  `flex items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold ${
+                    isActive ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
-                <span>{item.icon}</span>
+                <item.icon size={18} aria-hidden="true" />
                 {item.label}
               </NavLink>
             ))}
-            <div className="flex items-center justify-between px-3 pt-3 mt-2 border-t border-hairline text-sm">
-              <span className="flex items-center gap-2 text-mid-gray truncate">
+            <div className="flex items-center justify-between px-3 pt-3 mt-2 border-t border-white/15 text-sm">
+              <span className="flex items-center gap-2 text-[#c9c7f0] truncate">
                 {user && <Avatar name={user.displayName} id={user.userId} size={24} />}
                 {user?.displayName}
               </span>
-              <button onClick={handleLogout} className="text-mid-gray hover:text-ink text-xs">
+              <button onClick={handleLogout} className="text-[#c9c7f0] hover:text-white text-xs">
                 Cerrar sesión
               </button>
             </div>
@@ -187,7 +187,7 @@ export default function Layout() {
         {showUserMenu && user && (
           <div
             ref={userMenuPanelRef}
-            className="hidden md:block absolute right-6 top-16 w-64 bg-paper border border-hairline rounded-[18px] shadow-xl z-20 p-3"
+            className="hidden md:block absolute right-6 top-16 w-64 bg-paper text-ink border border-hairline rounded-[18px] shadow-xl z-20 p-3"
           >
             <div className="flex items-center gap-3 pb-3 border-b border-hairline">
               <Avatar name={user.displayName} id={user.userId} size={40} />
@@ -208,7 +208,7 @@ export default function Layout() {
         {showNotifications && (
           <div
             ref={notifPanelRef}
-            className="absolute right-4 md:right-6 top-16 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-paper border border-hairline rounded-[18px] shadow-xl z-20"
+            className="absolute right-4 md:right-6 top-16 w-80 max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto bg-paper text-ink border border-hairline rounded-[18px] shadow-xl z-20"
           >
             {notifications.length === 0 ? (
               <div className="p-4 text-sm text-mid-gray">Sin notificaciones por ahora.</div>
@@ -252,7 +252,7 @@ export default function Layout() {
                   className="shrink-0 text-mid-gray hover:text-ember"
                   aria-label="Borrar notificación"
                 >
-                  ✕
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
             ))}

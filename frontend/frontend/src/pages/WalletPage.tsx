@@ -14,6 +14,7 @@ import type {
 } from "../api/types";
 import { Button, Card, ColorDot, Input, Modal, PageTitle, ProgressBar, Select } from "../components/ui";
 import { MoneyField } from "../components/money";
+import { TriangleAlert, X } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
 function errorMessage(err: unknown): string {
@@ -32,12 +33,12 @@ function TransactionRow({ t, onDelete, formatMoney }: { t: TransactionDto; onDel
         </div>
         <div className="text-xs text-mid-gray">{new Date(t.date).toLocaleDateString("es-CL", { dateStyle: "medium" })}</div>
       </div>
-      <div className={`text-sm font-semibold shrink-0 whitespace-nowrap ${t.type === "Income" ? "text-emerald-400" : "text-red-500"}`}>
+      <div className={`text-sm font-semibold shrink-0 whitespace-nowrap tabular-nums ${t.type === "Income" ? "text-mint" : "text-ember"}`}>
         {t.type === "Income" ? "+" : "-"}
         {formatMoney(t.amount)}
       </div>
-      <button onClick={() => onDelete(t.id)} className="text-mid-gray hover:text-red-500 text-sm">
-        ✕
+      <button onClick={() => onDelete(t.id)} className="rounded-full p-1 text-mid-gray hover:bg-red-50 hover:text-ember" aria-label="Borrar movimiento">
+        <X size={15} aria-hidden="true" />
       </button>
     </li>
   );
@@ -238,7 +239,7 @@ export default function WalletPage() {
       <PageTitle title="Billetera" subtitle="Tu saldo, presupuesto y ahorros en un solo lugar." />
 
       {loadError && (
-        <div className="mb-4 rounded-[18px] border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-300 flex items-center justify-between gap-3">
+        <div className="mb-4 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-ember flex items-center justify-between gap-3">
           <span>{loadError}</span>
           <Button variant="secondary" onClick={loadWalletData}>
             Reintentar
@@ -250,7 +251,7 @@ export default function WalletPage() {
         {/* Saldo disponible + últimos movimientos */}
         <Card>
           <p className="text-sm text-mid-gray">Saldo disponible</p>
-          <p className="text-3xl font-bold mb-4">{wallet ? formatMoney(wallet.balance) : loading ? "Cargando…" : "—"}</p>
+          <p className="font-display text-4xl font-extrabold tracking-tight tabular-nums mb-4">{wallet ? formatMoney(wallet.balance) : loading ? "Cargando…" : "—"}</p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
             <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
@@ -262,7 +263,7 @@ export default function WalletPage() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-sm">Últimos movimientos</h3>
               {transactions.length > 4 && (
-                <button onClick={() => setHistoryModalOpen(true)} className="text-xs text-ink font-medium hover:underline">
+                <button onClick={() => setHistoryModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">
                   Ver historial completo
                 </button>
               )}
@@ -282,7 +283,7 @@ export default function WalletPage() {
         {/* Presupuesto mensual (todo en un cuadro) */}
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Presupuesto de {monthLabel}</h2>
+            <h2 className="text-lg font-extrabold">Presupuesto de {monthLabel}</h2>
             {budget && (
               <span className="text-sm text-mid-gray">
                 {formatMoney(budget.spent)} de {formatMoney(budget.limitAmount)}
@@ -296,8 +297,9 @@ export default function WalletPage() {
             </p>
           )}
           {budget && budget.percentUsed >= 90 && (
-            <p className="text-sm text-red-400 mt-2 font-medium">
-              ⚠️ Atención, estás muy cerca de llegar a tu objetivo máximo de gasto este mes.
+            <p className="flex items-start gap-1.5 text-sm text-ember mt-2 font-medium">
+              <TriangleAlert size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
+              Atención, estás muy cerca de llegar a tu objetivo máximo de gasto este mes.
             </p>
           )}
 
@@ -339,8 +341,8 @@ export default function WalletPage() {
         <>
           <Card className="mb-6">
             <div className="flex items-start justify-between gap-3 mb-4">
-              <h2 className="text-xl font-bold text-ink">{selectedGoal.name}</h2>
-              <button onClick={handleDeleteGoal} className="text-mid-gray hover:text-red-500 text-sm shrink-0">
+              <h2 className="text-2xl font-extrabold text-ink">{selectedGoal.name}</h2>
+              <button onClick={handleDeleteGoal} className="text-mid-gray hover:text-ember text-sm shrink-0">
                 Borrar meta
               </button>
             </div>
@@ -365,7 +367,7 @@ export default function WalletPage() {
               </Button>
               <Button type="submit">Apartar</Button>
             </form>
-            {formError && <p className="text-sm text-red-400 mt-2">{formError}</p>}
+            {formError && <p className="text-sm text-ember mt-2">{formError}</p>}
             <p className="text-xs text-mid-gray mt-2">
               Saldo disponible actual: {wallet ? formatMoney(wallet.balance) : "—"} · Fondo total (todas las metas):{" "}
               {wallet ? formatMoney(wallet.savingsFund) : "—"}
@@ -373,7 +375,7 @@ export default function WalletPage() {
           </Card>
 
           <Card>
-            <h2 className="font-semibold mb-3">Movimientos de "{selectedGoal.name}"</h2>
+            <h2 className="text-lg font-extrabold mb-3">Movimientos de "{selectedGoal.name}"</h2>
             {movements.length === 0 ? (
               <p className="text-sm text-mid-gray">Sin movimientos todavía para esta meta.</p>
             ) : (
@@ -381,7 +383,7 @@ export default function WalletPage() {
                 {movements.map((m) => (
                   <li key={m.id} className="py-2 flex justify-between text-sm">
                     <span className="text-mid-gray">{new Date(m.date).toLocaleDateString("es-CL")}</span>
-                    <span className="font-semibold text-emerald-400">+{formatMoney(m.amount)}</span>
+                    <span className="font-semibold tabular-nums text-mint">+{formatMoney(m.amount)}</span>
                   </li>
                 ))}
               </ul>
@@ -402,7 +404,7 @@ export default function WalletPage() {
       >
         <form onSubmit={handleSetBalance} className="space-y-3">
           <MoneyField value={newBalance} onChange={setNewBalance} placeholder="Monto" required />
-          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          {formError && <p className="text-sm text-ember">{formError}</p>}
           <Button type="submit" className="w-full">
             Guardar
           </Button>
@@ -440,7 +442,7 @@ export default function WalletPage() {
               ))}
           </Select>
           <Input placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
-          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          {formError && <p className="text-sm text-ember">{formError}</p>}
           <Button type="submit" className="w-full">
             Guardar
           </Button>
@@ -475,7 +477,7 @@ export default function WalletPage() {
             onChange={(e) => setGoalMonths(e.target.value)}
             required
           />
-          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          {formError && <p className="text-sm text-ember">{formError}</p>}
           <Button type="submit" className="w-full">
             Crear meta
           </Button>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Download, Sparkles, Star } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
 import { Button, Card, PageTitle, ProgressBar, Select } from "../components/ui";
@@ -141,23 +142,45 @@ export default function BudgetProjectPage() {
   }
   if (!project) return <p className="text-sm text-mid-gray">Cargando...</p>;
 
-  const assetCount = project.items.filter((item) => item.type === "Asset").length;
+  const assets = project.items.filter((item) => item.type === "Asset");
+  const liabilities = project.items.filter((item) => item.type === "Liability");
+  const assetCount = assets.length;
+  const quotedCount = assets.filter((item) => item.quote || item.aiQuoteSummary).length;
+  const sum = (items: BudgetItemDto[]) => items.reduce((total, item) => total + item.estimatedAmount, 0);
 
   return (
     <div>
-      <Link to="/presupuestos" className="text-xs text-mid-gray hover:text-ink">
-        ← Tus presupuestos
+      <Link to="/presupuestos" className="inline-flex items-center gap-1 text-xs font-medium text-mid-gray hover:text-ink">
+        <ArrowLeft size={14} aria-hidden="true" />
+        Tus presupuestos
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3 mt-2">
+      <div className="flex flex-wrap items-end justify-between gap-3 mt-2">
         <PageTitle title={project.name} subtitle="Revisa los tipos antes de generar: solo se cotizan los activos." />
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mb-6">
           <Button onClick={generate} disabled={quoting || changingType || assetCount === 0}>
+            <Sparkles size={16} aria-hidden="true" />
             {quoting ? "Generando..." : "Generar presupuesto actualizado"}
           </Button>
           <Button variant="secondary" onClick={download} disabled={quoting || downloading}>
+            <Download size={16} aria-hidden="true" />
             {downloading ? "Descargando..." : "Descargar Excel"}
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <Stat label="Activos estimados" value={clp.format(sum(assets))} detail={`${assetCount} ${assetCount === 1 ? "ítem" : "ítems"} para cotizar`} />
+        <Stat
+          label="Pasivos"
+          value={clp.format(sum(liabilities))}
+          detail={`${liabilities.length} ${liabilities.length === 1 ? "ítem" : "ítems"}, solo se clasifican`}
+        />
+        <Stat
+          label="Activos cotizados"
+          value={`${quotedCount} de ${assetCount}`}
+          detail={quotedCount === assetCount && assetCount > 0 ? "Listo para descargar" : "Aprieta Generar para cotizar"}
+          highlighted
+        />
       </div>
 
       {progress && (
@@ -175,43 +198,122 @@ export default function BudgetProjectPage() {
         </p>
       )}
 
-      <Card className="!p-0 overflow-x-auto">
-        <table className="w-full min-w-[1100px] text-sm text-left">
-          <thead className="text-xs text-mid-gray bg-surface-alt">
-            <tr className="border-b border-hairline">
-              <HeaderCell rowSpan={2}>Nombre</HeaderCell>
-              <HeaderCell rowSpan={2}>Categoría</HeaderCell>
-              <HeaderCell rowSpan={2}>Tipo</HeaderCell>
-              <HeaderCell rowSpan={2}>Monto estimado</HeaderCell>
-              <HeaderCell colSpan={3} center>Cotización Nueva</HeaderCell>
-              <HeaderCell rowSpan={2}>Fuentes consultadas</HeaderCell>
-              <HeaderCell rowSpan={2}>Fecha de cotización</HeaderCell>
-            </tr>
-            <tr className="border-b border-hairline">
-              <HeaderCell>Rango de precio</HeaderCell>
-              <HeaderCell>Mejor precio-calidad</HeaderCell>
-              <HeaderCell>Proveedores</HeaderCell>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline align-top">
-            {project.items.map((item) => (
-              <ItemRow
-                key={item.id}
-                item={item}
-                typeDisabled={quoting || changingType}
-                onTypeChange={(type) => changeType(item, type)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <GroupTitle label="Activos" count={assets.length} dotClass="bg-brand" />
+      {assets.length === 0 ? (
+        <EmptyGroup text="No hay activos en esta planilla, así que no hay nada que cotizar." />
+      ) : (
+        <Card className="!p-0 overflow-x-auto mb-8">
+          <table className="w-full min-w-[1100px] text-sm text-left">
+            <thead className="text-xs text-mid-gray">
+              <tr className="border-b border-hairline">
+                <HeaderCell rowSpan={2}>Nombre</HeaderCell>
+                <HeaderCell rowSpan={2}>Categoría</HeaderCell>
+                <HeaderCell rowSpan={2}>Tipo</HeaderCell>
+                <HeaderCell rowSpan={2}>Monto estimado</HeaderCell>
+                <HeaderCell colSpan={3} center quote>
+                  Cotización Nueva
+                </HeaderCell>
+                <HeaderCell rowSpan={2}>Fuentes consultadas</HeaderCell>
+                <HeaderCell rowSpan={2}>Fecha de cotización</HeaderCell>
+              </tr>
+              <tr className="border-b border-hairline">
+                <HeaderCell quote>Rango de precio</HeaderCell>
+                <HeaderCell quote>Mejor precio-calidad</HeaderCell>
+                <HeaderCell quote>Proveedores</HeaderCell>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dashed divide-hairline align-top">
+              {assets.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  typeDisabled={quoting || changingType}
+                  onTypeChange={(type) => changeType(item, type)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      <GroupTitle label="Pasivos" count={liabilities.length} dotClass="bg-[#c4c2e0]" />
+      {liabilities.length === 0 ? (
+        <EmptyGroup text="No hay pasivos en esta planilla." />
+      ) : (
+        <Card className="!p-0 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm text-left">
+            <thead className="text-xs text-mid-gray">
+              <tr className="border-b border-hairline">
+                <HeaderCell>Nombre</HeaderCell>
+                <HeaderCell>Categoría</HeaderCell>
+                <HeaderCell>Tipo</HeaderCell>
+                <HeaderCell>Monto estimado</HeaderCell>
+                <HeaderCell>Cotización</HeaderCell>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-dashed divide-hairline align-top">
+              {liabilities.map((item) => (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  typeDisabled={quoting || changingType}
+                  onTypeChange={(type) => changeType(item, type)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
     </div>
   );
 }
 
-function HeaderCell({ children, rowSpan, colSpan, center }: { children: React.ReactNode; rowSpan?: number; colSpan?: number; center?: boolean }) {
+function Stat({ label, value, detail, highlighted }: { label: string; value: string; detail: string; highlighted?: boolean }) {
   return (
-    <th scope="col" rowSpan={rowSpan} colSpan={colSpan} className={`px-3 py-2 font-medium ${center ? "text-center" : ""}`}>
+    <div className={`rounded-[18px] px-4 py-3.5 ${highlighted ? "bg-highlight" : "bg-paper border border-hairline"}`}>
+      <div className={`text-xs font-semibold ${highlighted ? "text-ink" : "text-mid-gray"}`}>{label}</div>
+      <div className="font-display text-[26px] font-extrabold tracking-tight tabular-nums mt-0.5">{value}</div>
+      <div className={`text-xs mt-0.5 ${highlighted ? "text-ink" : "text-mid-gray"}`}>{detail}</div>
+    </div>
+  );
+}
+
+function GroupTitle({ label, count, dotClass }: { label: string; count: number; dotClass: string }) {
+  return (
+    <h2 className="flex items-center gap-2 text-lg font-extrabold mb-3">
+      <span className={`h-3 w-3 rounded-full ${dotClass}`} aria-hidden="true" />
+      {label}
+      <span className="font-sans text-sm font-medium text-mid-gray">
+        {count} {count === 1 ? "ítem" : "ítems"}
+      </span>
+    </h2>
+  );
+}
+
+function EmptyGroup({ text }: { text: string }) {
+  return <p className="text-sm text-mid-gray mb-8">{text}</p>;
+}
+
+function HeaderCell({
+  children,
+  rowSpan,
+  colSpan,
+  center,
+  quote,
+}: {
+  children: React.ReactNode;
+  rowSpan?: number;
+  colSpan?: number;
+  center?: boolean;
+  quote?: boolean;
+}) {
+  return (
+    <th
+      scope="col"
+      rowSpan={rowSpan}
+      colSpan={colSpan}
+      className={`px-3 py-2.5 font-semibold ${center ? "text-center" : ""} ${quote ? "text-brand bg-brand-soft/60" : ""}`}
+    >
       {children}
     </th>
   );
@@ -226,15 +328,15 @@ function ItemRow({
   typeDisabled: boolean;
   onTypeChange: (type: BudgetItemType) => void;
 }) {
-  const placeholder = item.type === "Asset" ? NOT_QUOTED_YET : NOT_QUOTABLE;
+  const isAsset = item.type === "Asset";
   const muted = !item.quote && !item.aiQuoteSummary;
-  const cellClass = `px-3 py-2.5 ${muted ? "text-mid-gray" : ""}`;
+  const quoteCell = `px-3 py-3 bg-brand-soft/25 ${muted ? "text-mid-gray" : ""}`;
 
   return (
     <tr>
-      <td className="px-3 py-2.5 font-medium">{item.name}</td>
-      <td className="px-3 py-2.5">{item.category}</td>
-      <td className="px-3 py-2 w-28">
+      <td className="px-3 py-3 font-semibold">{item.name}</td>
+      <td className="px-3 py-3">{item.category}</td>
+      <td className="px-3 py-2.5 w-28">
         <Select
           aria-label={`Tipo de ${item.name}`}
           value={item.type}
@@ -246,14 +348,36 @@ function ItemRow({
           <option value="Liability">Pasivo</option>
         </Select>
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap">{clp.format(item.estimatedAmount)}</td>
-      <td className={cellClass}>{item.quote?.priceRange ?? item.aiQuoteSummary ?? placeholder}</td>
-      <td className={cellClass}>{item.quote?.bestValue ?? placeholder}</td>
-      <td className={cellClass}>{item.quote?.suppliers ?? placeholder}</td>
-      <td className="px-3 py-2.5 text-xs text-mid-gray">{item.quote?.sources}</td>
-      <td className="px-3 py-2.5 whitespace-nowrap">
-        {item.aiQuotedAt && new Date(item.aiQuotedAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}
-      </td>
+      <td className="px-3 py-3 whitespace-nowrap tabular-nums">{clp.format(item.estimatedAmount)}</td>
+      {isAsset ? (
+        <>
+          <td className={`${quoteCell} border-l-2 border-dotted border-brand/40`}>
+            <span className={muted ? "" : "font-display text-[15px] font-bold tabular-nums"}>
+              {item.quote?.priceRange ?? item.aiQuoteSummary ?? NOT_QUOTED_YET}
+            </span>
+          </td>
+          <td className={quoteCell}>
+            {item.quote?.bestValue ? (
+              <>
+                <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-highlight px-2 py-0.5 text-[11px] font-bold text-ink">
+                  <Star size={11} className="fill-current" aria-hidden="true" />
+                  Mejor opción
+                </span>
+                <span className="block font-medium">{item.quote.bestValue}</span>
+              </>
+            ) : (
+              NOT_QUOTED_YET
+            )}
+          </td>
+          <td className={quoteCell}>{item.quote?.suppliers ?? NOT_QUOTED_YET}</td>
+          <td className="px-3 py-3 text-xs text-mid-gray">{item.quote?.sources}</td>
+          <td className="px-3 py-3 whitespace-nowrap">
+            {item.aiQuotedAt && new Date(item.aiQuotedAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}
+          </td>
+        </>
+      ) : (
+        <td className="px-3 py-3 text-mid-gray">{NOT_QUOTABLE}: solo se clasifica.</td>
+      )}
     </tr>
   );
 }

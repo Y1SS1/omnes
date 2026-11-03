@@ -37,13 +37,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm bg-paper rounded-[24px] border border-hairline shadow-sm p-8">
+    <div className="min-h-screen flex items-center justify-center bg-ink px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(99,86,255,0.55),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(255,107,61,0.22),transparent_40%)]">
+      <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
         </div>
-        <h1 className="text-2xl font-bold text-center mb-1 text-ink">Omnes</h1>
-        <p className="text-sm text-mid-gray text-center mb-6">Organiza tu vida y tus finanzas</p>
+        <h1 className="font-display text-4xl font-extrabold text-center mb-1 text-ink">
+          Omnes
+        </h1>
+        <p className="text-sm text-mid-gray text-center mb-6">Tus finanzas y presupuestos, cotizados con IA</p>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <Input
@@ -53,14 +55,14 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-ember">{error}</p>}
           <Button type="button" onClick={submit} className="w-full" disabled={loading}>
             {loading ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </form>
         <p className="text-sm text-center text-mid-gray mt-4">
           ¿No tienes cuenta?{" "}
-          <Link to="/registro-trabajador" className="text-ink font-semibold hover:underline">
+          <Link to="/registro-trabajador" className="text-brand font-semibold hover:underline">
             Regístrate
           </Link>
         </p>

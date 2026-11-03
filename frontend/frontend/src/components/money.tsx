@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { fieldClass } from "./ui";
 import { CURRENCIES, formatAmountInput, formatAmountValue, useCurrency, type CurrencyCode } from "../context/CurrencyContext";
 
 export function CurrencySelect({ className = "" }: { className?: string }) {
@@ -8,7 +9,7 @@ export function CurrencySelect({ className = "" }: { className?: string }) {
       value={currency}
       onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
       title="Moneda"
-      className={`rounded-[18px] border border-transparent bg-canvas text-ink px-2 py-2 text-sm focus:outline-none focus:border-hairline focus:ring-1 focus:ring-hairline ${className}`}
+      className={`${fieldClass} !px-2 ${className}`}
     >
       {Object.values(CURRENCIES).map((c) => (
         <option key={c.code} value={c.code}>
@@ -72,7 +73,7 @@ export function MoneyInput({
       onChange={handleChange}
       placeholder={placeholder}
       required={required}
-      className={`w-full rounded-[18px] border border-transparent bg-canvas text-ink placeholder:text-mid-gray px-3 py-2 text-sm focus:outline-none focus:border-hairline focus:ring-1 focus:ring-hairline ${className}`}
+      className={`w-full ${fieldClass} ${className}`}
     />
   );
 }

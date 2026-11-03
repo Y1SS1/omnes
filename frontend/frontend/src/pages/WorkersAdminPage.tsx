@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as workersApi from "../api/workers";
 import type { WorkerDto } from "../api/workers";
+import { Trash2 } from "lucide-react";
 import { Avatar, Card, PageTitle, Button, Input } from "../components/ui";
 
 interface Draft {
@@ -77,7 +78,7 @@ export default function WorkersAdminPage() {
     <div>
       <PageTitle title="Trabajadores" subtitle="Administra las cuentas de la empresa: nombre, correo y cargo." />
 
-      {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+      {error && <p className="text-sm text-ember mb-4">{error}</p>}
 
       {loading ? (
         <p className="text-sm text-mid-gray">Cargando...</p>
@@ -129,11 +130,11 @@ export default function WorkersAdminPage() {
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(w.id)}
-                      className="shrink-0 text-mid-gray hover:text-red-500 text-lg leading-none px-1"
+                      className="shrink-0 rounded-full p-2 text-mid-gray hover:bg-red-50 hover:text-ember"
                       aria-label={`Eliminar a ${w.displayName}`}
                       title="Eliminar trabajador"
                     >
-                      ✕
+                      <Trash2 size={17} aria-hidden="true" />
                     </button>
                   )}
                 </div>

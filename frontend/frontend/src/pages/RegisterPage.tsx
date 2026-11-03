@@ -34,13 +34,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm bg-paper rounded-[24px] border border-hairline shadow-sm p-8">
+    <div className="min-h-screen flex items-center justify-center bg-ink px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(99,86,255,0.55),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(255,107,61,0.22),transparent_40%)]">
+      <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
         </div>
-        <h1 className="text-2xl font-bold text-center mb-1 text-ink">Crear cuenta</h1>
-        <p className="text-sm text-mid-gray text-center mb-6">Empieza a organizar tu vida</p>
+        <h1 className="font-display text-3xl font-extrabold text-center mb-1 text-ink">Crear cuenta</h1>
+        <p className="text-sm text-mid-gray text-center mb-6">Empieza a ordenar tus finanzas</p>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input placeholder="Nombre" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
           <Input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -52,13 +52,13 @@ export default function RegisterPage() {
             required
             minLength={6}
           />
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-ember">{error}</p>}
           <Button type="button" onClick={submit} className="w-full" disabled={loading}>
             {loading ? "Creando..." : "Crear cuenta"}
           </Button>
         </form>
         <p className="text-sm text-center text-mid-gray mt-4">
-          ¿Ya tienes cuenta? <Link to="/login" className="text-ink font-semibold hover:underline">Inicia sesión</Link>
+          ¿Ya tienes cuenta? <Link to="/login" className="text-brand font-semibold hover:underline">Inicia sesión</Link>
         </p>
       </div>
     </div>

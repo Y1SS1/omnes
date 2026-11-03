@@ -17,14 +17,15 @@ import type { ExpenseCategorySlice, SavingsComparisonDto } from "../api/types";
 import { Card, PageTitle } from "../components/ui";
 import { useCurrency } from "../context/CurrencyContext";
 
-const axisTick = { fill: "#a3a3a3", fontSize: 11 };
-const gridStroke = "#404040";
+// Recharts takes colors as props, so these mirror the theme tokens in index.css.
+const axisTick = { fill: "#615e8a", fontSize: 11 };
+const gridStroke = "#e2e2f0";
 const tooltipStyle = {
-  contentStyle: { background: "#171717", border: "1px solid #404040", borderRadius: 8, color: "#fff" },
-  labelStyle: { color: "#fff" },
-  itemStyle: { color: "#e5e5e5" },
+  contentStyle: { background: "#ffffff", border: "1px solid #e2e2f0", borderRadius: 12, color: "#1d1a4f" },
+  labelStyle: { color: "#1d1a4f", fontWeight: 600 },
+  itemStyle: { color: "#1d1a4f" },
 };
-const legendStyle = { color: "#d4d4d4" };
+const legendStyle = { color: "#615e8a" };
 
 export default function ReportsPage() {
   const { formatMoney } = useCurrency();
@@ -46,7 +47,7 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h2 className="font-semibold mb-1">Ahorro real vs. planificado</h2>
+          <h2 className="text-lg font-extrabold mb-1">Ahorro real vs. planificado</h2>
           <p className="text-xs text-mid-gray mb-3">Meta del mes vs. lo depositado en el fondo.</p>
           {savingsComparison && (savingsComparison.planned > 0 || savingsComparison.real > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
@@ -60,9 +61,9 @@ export default function ReportsPage() {
                 <XAxis dataKey="name" tick={{ ...axisTick, fontSize: 12 }} />
                 <YAxis tick={axisTick} />
                 <Tooltip {...tooltipStyle} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  <Cell fill="#71717a" />
-                  <Cell fill="#10B981" />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  <Cell fill="#c4c2e0" />
+                  <Cell fill="#3b2fd6" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -72,7 +73,7 @@ export default function ReportsPage() {
         </Card>
 
         <Card>
-          <h2 className="font-semibold mb-1">Gastos por categoría</h2>
+          <h2 className="text-lg font-extrabold mb-1">Gastos por categoría</h2>
           <p className="text-xs text-mid-gray mb-3">Desglose de tu gasto mensual, de mayor a menor.</p>
           {expenseCategories.length === 0 ? (
             <EmptyState />

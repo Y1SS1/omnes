@@ -1,10 +1,9 @@
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, useEffect, type ReactNode } from "react";
+import { X } from "lucide-react";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div
-      className={`bg-paper rounded-[24px] border border-hairline shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] p-3 sm:p-5 ${className}`}
-    >
+    <div className={`bg-paper rounded-[20px] border border-hairline shadow-[0_1px_2px_rgba(29,26,79,0.06)] p-4 sm:p-5 ${className}`}>
       {children}
     </div>
   );
@@ -13,25 +12,27 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-6">
-      <h1 className="text-2xl font-semibold text-ink tracking-tight">{title}</h1>
-      {subtitle && <p className="text-sm text-mid-gray mt-1">{subtitle}</p>}
+      <h1 className="font-display text-3xl sm:text-[34px] font-extrabold text-ink tracking-tight leading-tight text-balance">
+        {title}
+      </h1>
+      {subtitle && <p className="text-sm text-mid-gray mt-2">{subtitle}</p>}
     </div>
   );
 }
 
 export function ProgressBar({ percent, color }: { percent: number; color: "green" | "yellow" | "red" }) {
-  const bg = { green: "bg-emerald-500", yellow: "bg-amber-500", red: "bg-red-500" }[color];
+  const bg = { green: "bg-mint", yellow: "bg-amber-500", red: "bg-ember" }[color];
   return (
-    <div className="w-full h-4 bg-neutral-200 rounded-full overflow-hidden">
+    <div className="w-full h-3 bg-canvas rounded-full overflow-hidden">
       <div
-        className={`h-full ${bg} transition-all duration-500`}
+        className={`h-full ${bg} rounded-full transition-all duration-500`}
         style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
       />
     </div>
   );
 }
 
-const AVATAR_COLORS = ["#3B82F6", "#8B5CF6", "#EF4444", "#F59E0B", "#10B981", "#EC4899", "#6366F1", "#14B8A6"];
+const AVATAR_COLORS = ["#3B2FD6", "#FF6B3D", "#0E8F62", "#C2410C", "#7C3AED", "#0369A1", "#BE185D", "#4D7C0F"];
 
 function hashString(input: string): number {
   let hash = 0;
@@ -93,8 +94,8 @@ export function Button({
   className?: string;
 }) {
   const styles = {
-    primary: "bg-ink text-white hover:bg-ink-soft",
-    secondary: "bg-canvas text-ink hover:bg-neutral-200",
+    primary: "bg-brand text-white hover:bg-brand-strong",
+    secondary: "bg-paper text-ink border border-hairline hover:border-brand/40 hover:bg-brand-soft",
     danger: "bg-red-50 text-ember hover:bg-red-100",
     ghost: "text-mid-gray hover:bg-canvas hover:text-ink",
   }[variant];
@@ -103,46 +104,53 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`px-3 py-2 rounded-[18px] text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50 disabled:cursor-not-allowed ${styles} ${className}`}
     >
       {children}
     </button>
   );
 }
 
+// Shared look for text fields and selects; width is left to each caller.
+export const fieldClass =
+  "rounded-[14px] border border-transparent bg-canvas text-ink placeholder:text-mid-gray px-3 py-2 text-sm focus:outline-none focus:border-brand focus:bg-paper focus:ring-2 focus:ring-brand-soft";
+
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input(
   props,
   ref
 ) {
-  return (
-    <input
-      {...props}
-      ref={ref}
-      className={`w-full rounded-[18px] border border-transparent bg-canvas text-ink placeholder:text-mid-gray px-3 py-2 text-sm focus:outline-none focus:border-hairline focus:bg-paper focus:ring-1 focus:ring-hairline ${props.className ?? ""}`}
-    />
-  );
+  return <input {...props} ref={ref} className={`w-full ${fieldClass} ${props.className ?? ""}`} />;
 });
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`w-full rounded-[18px] border border-transparent px-3 py-2 text-sm focus:outline-none focus:border-hairline focus:ring-1 focus:ring-hairline bg-canvas text-ink ${props.className ?? ""}`}
-    />
-  );
+  return <select {...props} className={`w-full ${fieldClass} ${props.className ?? ""}`} />;
 }
 
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-ink/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className="bg-paper border border-hairline rounded-[24px] shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-ink">{title}</h2>
-          <button onClick={onClose} className="text-mid-gray hover:text-ink">✕</button>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="text-xl font-extrabold text-ink">{title}</h2>
+          <button onClick={onClose} className="rounded-full p-1.5 text-mid-gray hover:bg-canvas hover:text-ink" aria-label="Cerrar">
+            <X size={18} aria-hidden="true" />
+          </button>
         </div>
         {children}
       </div>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ChevronRight, FileSpreadsheet, Paperclip } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import type { BudgetProjectSummaryDto } from "../api/types";
 import { Button, Card, Input, PageTitle } from "../components/ui";
@@ -91,9 +92,9 @@ export default function BudgetProjectsPage() {
             }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
-            className={`block rounded-[18px] border-2 border-dashed p-6 text-center transition-colors focus-within:border-ink ${
+            className={`block rounded-[18px] border-2 border-dashed p-6 text-center transition-colors focus-within:border-brand ${
               uploading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-            } ${dragging ? "border-ink bg-canvas" : "border-hairline hover:border-neutral-400"}`}
+            } ${dragging ? "border-brand bg-brand-soft" : "border-hairline hover:border-brand/50 hover:bg-surface-alt"}`}
           >
             <input
               ref={fileInputRef}
@@ -103,7 +104,9 @@ export default function BudgetProjectsPage() {
               disabled={uploading}
               onChange={(e) => chooseFile(e.target.files?.[0])}
             />
-            <div className="text-2xl mb-1" aria-hidden="true">📎</div>
+            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-ink" aria-hidden="true">
+              <Paperclip size={20} />
+            </div>
             {file ? (
               <div className="text-sm font-medium break-all">{file.name}</div>
             ) : (
@@ -145,7 +148,7 @@ export default function BudgetProjectsPage() {
       </Card>
 
       <Card>
-        <h2 className="font-semibold mb-3">Tus presupuestos</h2>
+        <h2 className="text-lg font-extrabold mb-2">Tus presupuestos</h2>
         {loadFailed && <p className="text-sm text-ember">No se pudieron cargar tus presupuestos.</p>}
         {projects?.length === 0 && <p className="text-sm text-mid-gray">Todavía no has subido ninguna planilla.</p>}
         <div className="divide-y divide-hairline">
@@ -153,13 +156,17 @@ export default function BudgetProjectsPage() {
             <Link
               key={project.id}
               to={`/presupuestos/${project.id}`}
-              className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-mid-gray"
+              className="group flex items-center gap-3 -mx-2 px-2 py-3 rounded-[14px] text-sm hover:bg-surface-alt"
             >
-              <span className="font-medium truncate">{project.name}</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+                <FileSpreadsheet size={17} />
+              </span>
+              <span className="font-semibold truncate flex-1">{project.name}</span>
               <span className="text-xs text-mid-gray shrink-0">
                 {project.itemCount} {project.itemCount === 1 ? "ítem" : "ítems"} ·{" "}
                 {new Date(project.createdAt).toLocaleDateString("es-CL")}
               </span>
+              <ChevronRight size={16} className="shrink-0 text-mid-gray group-hover:text-brand" aria-hidden="true" />
             </Link>
           ))}
         </div>
