@@ -61,16 +61,46 @@ public class SavingsController : ControllerBase
         return Ok(ToDto(goal, 0));
     }
 
-    // Deletes the goal label only - money already allocated stays in the fund,
-    // it just becomes unassigned (see SetNull in AppDbContext).
+    // Deletes the goal and returns the money set aside for it to the spendable balance,
+    // so it never stays locked in the fund without a goal.
     [HttpDelete("goals/{id}")]
-    public async Task<IActionResult> DeleteGoal(Guid id)
+    public async Task<ActionResult<WalletDto>> DeleteGoal(Guid id)
     {
-        var goal = await _db.SavingsGoals.FirstOrDefaultAsync(g => g.Id == id && g.UserId == _currentUser.UserId);
+        var userId = _currentUser.UserId;
+        var goal = await _db.SavingsGoals.FirstOrDefaultAsync(g => g.Id == id && g.UserId == userId);
         if (goal is null) return NotFound();
+
+        var movements = await _db.SavingsMovements.Where(m => m.UserId == userId && m.SavingsGoalId == id).ToListAsync();
+        var wallet = await ReturnToBalance(userId, movements);
         _db.SavingsGoals.Remove(goal);
         await _db.SaveChangesAsync();
-        return NoContent();
+        return Ok(new WalletDto(wallet?.Balance ?? 0, wallet?.SavingsFund ?? 0));
+    }
+
+    // Returns to the balance the fund money that belongs to no goal, such as money from
+    // goals deleted before deleting a goal returned its money.
+    [HttpPost("release-unassigned")]
+    public async Task<ActionResult<WalletDto>> ReleaseUnassigned()
+    {
+        var userId = _currentUser.UserId;
+        var movements = await _db.SavingsMovements.Where(m => m.UserId == userId && m.SavingsGoalId == null).ToListAsync();
+        var wallet = await ReturnToBalance(userId, movements);
+        if (wallet is null) return NotFound();
+        await _db.SaveChangesAsync();
+        return Ok(new WalletDto(wallet.Balance, wallet.SavingsFund));
+    }
+
+    // Moves the movements' money out of the fund and back to the balance, and drops the
+    // movements so the fund keeps matching what its goals hold. Never takes the fund below 0.
+    private async Task<Wallet?> ReturnToBalance(Guid userId, List<SavingsMovement> movements)
+    {
+        var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
+        if (wallet is null) return null;
+        var amount = Math.Min(movements.Sum(m => m.Amount), wallet.SavingsFund);
+        wallet.SavingsFund -= amount;
+        wallet.Balance += amount;
+        _db.SavingsMovements.RemoveRange(movements);
+        return wallet;
     }
 
     // US-17: separates money from the spendable balance into the untouchable savings fund,

@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<BudgetProject> BudgetProjects => Set<BudgetProject>();
     public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
+    public DbSet<PlannedItem> PlannedItems => Set<PlannedItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,6 +103,19 @@ public class AppDbContext : DbContext
         {
             e.Property(i => i.EstimatedAmount).HasPrecision(14, 2);
             e.HasOne(i => i.BudgetProject).WithMany(p => p.Items)
+                .HasForeignKey(i => i.BudgetProjectId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlannedItem>(e =>
+        {
+            e.Property(i => i.Amount).HasPrecision(14, 2);
+            e.Property(i => i.Name).HasMaxLength(200);
+            e.Property(i => i.Category).HasMaxLength(200);
+            e.HasIndex(i => new { i.UserId, i.BudgetProjectId });
+            e.HasOne(i => i.User).WithMany()
+                .HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
+            // The copy only makes sense while its source project exists.
+            e.HasOne(i => i.BudgetProject).WithMany()
                 .HasForeignKey(i => i.BudgetProjectId).OnDelete(DeleteBehavior.Cascade);
         });
     }

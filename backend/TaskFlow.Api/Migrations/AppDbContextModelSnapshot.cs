@@ -159,6 +159,47 @@ namespace TaskFlow.Api.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("TaskFlow.Api.Models.PlannedItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<Guid>("BudgetProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BudgetProjectId");
+
+                    b.HasIndex("UserId", "BudgetProjectId");
+
+                    b.ToTable("PlannedItems");
+                });
+
             modelBuilder.Entity("TaskFlow.Api.Models.SavingsGoal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -389,6 +430,25 @@ namespace TaskFlow.Api.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TaskFlow.Api.Models.PlannedItem", b =>
+                {
+                    b.HasOne("TaskFlow.Api.Models.BudgetProject", "BudgetProject")
+                        .WithMany()
+                        .HasForeignKey("BudgetProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskFlow.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BudgetProject");
 
                     b.Navigation("User");
                 });

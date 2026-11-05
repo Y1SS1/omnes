@@ -3,6 +3,7 @@ using TaskFlow.Api.Controllers;
 using TaskFlow.Api.Data;
 using TaskFlow.Api.Dtos;
 using TaskFlow.Api.Models;
+using TaskFlow.Api.Services;
 using Xunit;
 
 namespace TaskFlow.Api.Tests;
@@ -17,57 +18,80 @@ public class ReportsControllerTests
         return (controller, db, userId);
     }
 
-    [Fact]
-    public async Task SavingsComparison_SumsPlannedQuotasVsRealMovements()
+    private static BudgetProject AddPlannedBudget(AppDbContext db, Guid userId)
     {
-        var (controller, db, userId) = NewController();
-        db.SavingsGoals.Add(new SavingsGoal { UserId = userId, Name = "Viaje", TargetAmount = 1200m, TargetMonths = 12 });
-        await db.SaveChangesAsync();
-        db.SavingsMovements.Add(new SavingsMovement
+        var project = new BudgetProject { UserId = userId, Name = "Pollería" };
+        project.Items.Add(new BudgetItem
         {
-            UserId = userId, Amount = 80m, Date = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+            Name = "Freidora", Category = "Cocina", Type = BudgetItemType.Asset, EstimatedAmount = 650_000m,
+            AiQuoteSummary = BudgetQuoteSummary.Format("$400.000 - $600.000 CLP", "Gastromaq", "Sodimac", []),
         });
-        await db.SaveChangesAsync();
-
-        var result = await controller.SavingsComparison(2026, 10);
-
-        var ok = Assert.IsType<ActionResult<SavingsComparisonDto>>(result);
-        var dto = Assert.IsType<SavingsComparisonDto>(ok.Value);
-        Assert.Equal(100m, dto.Planned);
-        Assert.Equal(80m, dto.Real);
+        project.Items.Add(new BudgetItem { Name = "Mesón", Category = "Mobiliario", Type = BudgetItemType.Asset, EstimatedAmount = 280_000m });
+        project.Items.Add(new BudgetItem { Name = "Arriendo", Category = "Gastos fijos", Type = BudgetItemType.Liability, EstimatedAmount = 850_000m });
+        db.BudgetProjects.Add(project);
+        // The wallet copy, already edited by the user: the category spelling and the amounts differ.
+        db.PlannedItems.AddRange(
+            new PlannedItem { UserId = userId, BudgetProjectId = project.Id, Name = "Freidora", Category = "Cocina", Type = BudgetItemType.Asset, Amount = 700_000m },
+            new PlannedItem { UserId = userId, BudgetProjectId = project.Id, Name = "Mesón", Category = "cocina ", Type = BudgetItemType.Asset, Amount = 300_000m },
+            new PlannedItem { UserId = userId, BudgetProjectId = project.Id, Name = "Arriendo", Category = "Gastos fijos", Type = BudgetItemType.Liability, Amount = 1_000_000m });
+        db.SaveChanges();
+        return project;
     }
 
     [Fact]
-    public async Task ExpensesByCategory_GroupsExpensesByCategoryLargestFirst()
+    public async Task PlannedBudget_WithoutABudgetInTheWallet_ReturnsAnEmptyReport()
+    {
+        var (controller, _, _) = NewController();
+
+        var dto = (await controller.PlannedBudget()).Value!;
+
+        Assert.Null(dto.ProjectId);
+        Assert.Empty(dto.ByCategory);
+        Assert.Empty(dto.AssetQuotes);
+    }
+
+    [Fact]
+    public async Task PlannedBudget_TotalsTheWalletCopyByTypeAndCategory()
     {
         var (controller, db, userId) = NewController();
-        var food = new Category { UserId = userId, Name = "Comida", Color = "#000", Type = CategoryType.Expense };
-        var transport = new Category { UserId = userId, Name = "Transporte", Color = "#fff", Type = CategoryType.Expense };
-        db.Categories.AddRange(food, transport);
-        await db.SaveChangesAsync();
-        db.Transactions.Add(new Transaction
-        {
-            UserId = userId, Amount = 300m, Type = TransactionType.Expense, CategoryId = food.Id,
-            Date = new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc),
-        });
-        db.Transactions.Add(new Transaction
-        {
-            UserId = userId, Amount = 100m, Type = TransactionType.Expense, CategoryId = transport.Id,
-            Date = new DateTime(2026, 10, 6, 0, 0, 0, DateTimeKind.Utc),
-        });
-        db.Transactions.Add(new Transaction
-        {
-            UserId = userId, Amount = 1000m, Type = TransactionType.Income,
-            Date = new DateTime(2026, 10, 7, 0, 0, 0, DateTimeKind.Utc),
-        });
-        await db.SaveChangesAsync();
+        var project = AddPlannedBudget(db, userId);
 
-        var result = await controller.ExpensesByCategory(2026, 10);
+        var dto = (await controller.PlannedBudget()).Value!;
 
-        var list = Assert.IsType<List<ExpenseCategorySlice>>(result.Value, exactMatch: false);
-        Assert.Equal(2, list.Count);
-        Assert.Equal("Comida", list[0].CategoryName);
-        Assert.Equal(300m, list[0].Amount);
-        Assert.Equal(75m, list[0].Percent);
+        Assert.Equal(project.Id, dto.ProjectId);
+        Assert.Equal("Pollería", dto.ProjectName);
+        Assert.Equal(1_000_000m, dto.AssetsTotal);
+        Assert.Equal(1_000_000m, dto.LiabilitiesTotal);
+        Assert.Equal(2, dto.ByCategory.Count);
+        Assert.All(dto.ByCategory, slice => Assert.Equal(50m, slice.Percent));
+        Assert.Contains(dto.ByCategory, slice => slice.Category == "Cocina" && slice.Amount == 1_000_000m);
+    }
+
+    [Fact]
+    public async Task PlannedBudget_ComparesEachAssetEstimateWithTheAiRange()
+    {
+        var (controller, db, userId) = NewController();
+        AddPlannedBudget(db, userId);
+
+        var dto = (await controller.PlannedBudget()).Value!;
+
+        Assert.Equal(2, dto.AssetQuotes.Count);
+        var fryer = Assert.Single(dto.AssetQuotes, a => a.Name == "Freidora");
+        Assert.Equal(650_000m, fryer.EstimatedAmount);
+        Assert.Equal(400_000m, fryer.PriceMin);
+        Assert.Equal(600_000m, fryer.PriceMax);
+        var counter = Assert.Single(dto.AssetQuotes, a => a.Name == "Mesón");
+        Assert.Null(counter.PriceMin);
+    }
+
+    [Fact]
+    public async Task PlannedBudget_IgnoresOtherUsersBudgets()
+    {
+        var (controller, db, _) = NewController();
+        AddPlannedBudget(db, Guid.NewGuid());
+
+        var dto = (await controller.PlannedBudget()).Value!;
+
+        Assert.Null(dto.ProjectId);
     }
 }

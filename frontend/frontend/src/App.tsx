@@ -5,7 +5,6 @@ import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RegisterWorkerPage from "./pages/RegisterWorkerPage";
-import DashboardPage from "./pages/DashboardPage";
 import WalletPage from "./pages/WalletPage";
 import ReportsPage from "./pages/ReportsPage";
 import BudgetProjectsPage from "./pages/BudgetProjectsPage";
@@ -37,13 +36,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
+        {/* La pantalla de inicio es donde se suben y cotizan los presupuestos. */}
+        <Route path="/" element={<BudgetProjectsPage />} />
         <Route path="/wallet" element={<WalletPage />} />
         {/* Presupuesto y Ahorros ahora viven dentro de Billetera. */}
         <Route path="/budget" element={<Navigate to="/wallet" replace />} />
         <Route path="/savings" element={<Navigate to="/wallet" replace />} />
         <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/presupuestos" element={<BudgetProjectsPage />} />
+        <Route path="/presupuestos" element={<Navigate to="/" replace />} />
         <Route path="/presupuestos/:id" element={<BudgetProjectPage />} />
         <Route
           path="/trabajadores"

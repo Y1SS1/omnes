@@ -11,8 +11,16 @@ export async function createSavingsGoal(name: string, targetAmount: number, targ
   return data;
 }
 
+// Deletes the goal; the money set aside for it goes back to the spendable balance.
 export async function deleteSavingsGoal(id: string) {
-  await api.delete(`/savings/goals/${id}`);
+  const { data } = await api.delete<WalletDto>(`/savings/goals/${id}`);
+  return data;
+}
+
+// Returns to the balance the fund money that belongs to no goal.
+export async function releaseUnassignedSavings() {
+  const { data } = await api.post<WalletDto>("/savings/release-unassigned");
+  return data;
 }
 
 export async function allocateSavings(amount: number, savingsGoalId?: string | null, note?: string) {

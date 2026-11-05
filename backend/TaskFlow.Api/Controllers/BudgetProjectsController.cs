@@ -174,6 +174,45 @@ public partial class BudgetProjectsController : ControllerBase
         return Ok(ToDto(item));
     }
 
+    [HttpPatch("{id:guid}/name")]
+    public async Task<ActionResult<BudgetProjectSummaryDto>> Rename(Guid id, RenameBudgetProjectRequest req)
+    {
+        var name = req.Name?.Trim();
+        if (string.IsNullOrEmpty(name))
+            return BadRequest("El nombre del presupuesto es obligatorio.");
+        if (name.Length > BudgetExcelReader.MaxTextLength)
+            return BadRequest($"El nombre del presupuesto no puede superar los {BudgetExcelReader.MaxTextLength} caracteres.");
+
+        var project = await _db.BudgetProjects
+            .Include(p => p.Items)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == _currentUser.UserId);
+        if (project is null) return NotFound();
+
+        project.Name = name;
+        await _db.SaveChangesAsync();
+        return Ok(new BudgetProjectSummaryDto(project.Id, project.Name, project.CreatedAt, project.Items.Count));
+    }
+
+    // Deletes the project with its items. If the wallet holds this budget, its copy goes too:
+    // a planned budget without its source Excel would have nothing to compare against.
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var userId = _currentUser.UserId;
+        var project = await _db.BudgetProjects
+            .Include(p => p.Items)
+            .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+        if (project is null) return NotFound();
+
+        // Removed explicitly so that it does not depend on the database's cascade rules.
+        var plannedCopy = await _db.PlannedItems.Where(i => i.UserId == userId && i.BudgetProjectId == id).ToListAsync();
+        _db.PlannedItems.RemoveRange(plannedCopy);
+        _db.BudgetItems.RemoveRange(project.Items);
+        _db.BudgetProjects.Remove(project);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}/export")]
     public async Task<IActionResult> Export(Guid id)
     {

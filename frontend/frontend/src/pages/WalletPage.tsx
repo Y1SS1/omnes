@@ -14,6 +14,7 @@ import type {
 } from "../api/types";
 import { Button, Card, ColorDot, Input, Modal, PageTitle, ProgressBar, Select } from "../components/ui";
 import { MoneyField } from "../components/money";
+import { PlannedBudget } from "../components/PlannedBudget";
 import { TriangleAlert, X } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
@@ -57,6 +58,7 @@ export default function WalletPage() {
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [txModalOpen, setTxModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [newBalance, setNewBalance] = useState<number | null>(null);
@@ -83,6 +85,11 @@ export default function WalletPage() {
   const [allocateAmount, setAllocateAmount] = useState<number | null>(null);
 
   const selectedGoal = goals.find((g) => g.id === selectedGoalId) ?? null;
+  const goalsSaved = goals.reduce((total, g) => total + g.savedAmount, 0);
+  // Fund money no goal accounts for (e.g. from goals deleted before deleting returned it).
+  // Below one peso it is only rounding, not money worth returning.
+  const unassignedSavings = wallet ? Math.max(0, Math.round((wallet.savingsFund - goalsSaved) * 100) / 100) : 0;
+  const hasUnassignedSavings = unassignedSavings >= 1;
 
   const loadWalletData = async () => {
     try {
@@ -186,8 +193,14 @@ export default function WalletPage() {
   const handleSaveBudget = async (e: React.FormEvent) => {
     e.preventDefault();
     if (limitInput === null || limitInput <= 0) return;
-    const data = await budgetApi.setBudget(year, month, limitInput);
-    setBudget(data);
+    setFormError(null);
+    try {
+      const data = await budgetApi.setBudget(year, month, limitInput);
+      setBudget(data);
+      setLimitModalOpen(false);
+    } catch (err) {
+      setFormError(errorMessage(err));
+    }
   };
 
   const handleCreateGoal = async (e: React.FormEvent) => {
@@ -210,11 +223,30 @@ export default function WalletPage() {
 
   const handleDeleteGoal = async () => {
     if (!selectedGoal) return;
-    if (!window.confirm(`¿Borrar la meta "${selectedGoal.name}"? El dinero ya apartado se mantiene en tu fondo, solo deja de estar etiquetado con esta meta.`)) {
+    const returned =
+      selectedGoal.savedAmount > 0
+        ? ` Lo que apartaste (${formatMoney(selectedGoal.savedAmount)}) volverá a tu saldo disponible.`
+        : "";
+    if (!window.confirm(`¿Borrar la meta "${selectedGoal.name}"?${returned}`)) return;
+    setFormError(null);
+    try {
+      setWallet(await savingsApi.deleteSavingsGoal(selectedGoal.id));
+      await loadGoals(false);
+    } catch (err) {
+      setFormError(errorMessage(err));
+    }
+  };
+
+  const handleReleaseUnassigned = async () => {
+    if (!window.confirm(`¿Devolver ${formatMoney(unassignedSavings)} del fondo a tu saldo disponible? Es dinero que no pertenece a ninguna meta.`)) {
       return;
     }
-    await savingsApi.deleteSavingsGoal(selectedGoal.id);
-    await loadGoals(false);
+    setFormError(null);
+    try {
+      setWallet(await savingsApi.releaseUnassignedSavings());
+    } catch (err) {
+      setFormError(errorMessage(err));
+    }
   };
 
   const handleAllocate = async (e: React.FormEvent) => {
@@ -233,6 +265,8 @@ export default function WalletPage() {
 
   const monthLabel = new Date(year, month - 1, 1).toLocaleDateString("es-CL", { month: "long", year: "numeric" });
   const recentTransactions = transactions.slice(0, 4);
+  const goalsTarget = goals.reduce((total, g) => total + g.targetAmount, 0);
+  const hasBudgetLimit = budget !== null && budget.limitAmount > 0;
 
   return (
     <div>
@@ -247,11 +281,76 @@ export default function WalletPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Saldo disponible + últimos movimientos */}
+      {/* Resumen: lo que antes mostraba la página de Inicio */}
+      <section aria-label="Resumen de tu billetera" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <p className="text-sm text-mid-gray">Saldo disponible</p>
-          <p className="font-display text-4xl font-extrabold tracking-tight tabular-nums mb-4">{wallet ? formatMoney(wallet.balance) : loading ? "Cargando…" : "—"}</p>
+          <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-ink">
+            {wallet ? formatMoney(wallet.balance) : loading ? "Cargando…" : "—"}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-mid-gray">Fondo de ahorro</p>
+          <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-ink">
+            {wallet ? formatMoney(wallet.savingsFund) : loading ? "Cargando…" : "—"}
+          </p>
+          {hasUnassignedSavings && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs">
+              <span className="text-mid-gray">{formatMoney(unassignedSavings)} sin meta</span>
+              <button onClick={handleReleaseUnassigned} className="font-semibold text-brand hover:underline">
+                Devolver al saldo
+              </button>
+            </div>
+          )}
+        </Card>
+        <Card>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm text-mid-gray">Gastado en {monthLabel}</p>
+            <button onClick={() => setLimitModalOpen(true)} className="text-xs font-semibold text-brand hover:underline shrink-0">
+              {hasBudgetLimit ? "Editar límite" : "Definir límite"}
+            </button>
+          </div>
+          {hasBudgetLimit ? (
+            <>
+              <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-ink">{budget.percentUsed}%</p>
+              <div className="mt-2">
+                <ProgressBar percent={budget.percentUsed} color={budget.color} />
+              </div>
+              <p className="text-xs text-mid-gray mt-1">
+                {formatMoney(budget.spent)} de {formatMoney(budget.limitAmount)}
+              </p>
+              {budget.percentUsed >= 90 && (
+                <p className="flex items-start gap-1 text-xs text-ember mt-1 font-medium">
+                  <TriangleAlert size={14} className="shrink-0 mt-px" aria-hidden="true" />
+                  Estás muy cerca de tu límite de gasto del mes.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-mid-gray mt-1">Define cuánto quieres gastar como máximo este mes y te avisaremos al acercarte.</p>
+          )}
+        </Card>
+        <Card>
+          <p className="text-sm text-mid-gray">Metas de ahorro</p>
+          {goals.length > 0 ? (
+            <>
+              <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-ink">
+                {goals.length} {goals.length === 1 ? "meta" : "metas"}
+              </p>
+              <p className="text-xs text-mid-gray mt-1">
+                {formatMoney(goalsSaved)} de {formatMoney(goalsTarget)} ahorrado
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-mid-gray mt-1">Todavía no tienes metas.</p>
+          )}
+        </Card>
+      </section>
+
+      <div className="mb-8">
+        {/* Movimientos */}
+        <Card>
+          <h2 className="text-lg font-extrabold mb-3">Movimientos</h2>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
             <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
@@ -279,41 +378,9 @@ export default function WalletPage() {
             )}
           </div>
         </Card>
-
-        {/* Presupuesto mensual (todo en un cuadro) */}
-        <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-extrabold">Presupuesto de {monthLabel}</h2>
-            {budget && (
-              <span className="text-sm text-mid-gray">
-                {formatMoney(budget.spent)} de {formatMoney(budget.limitAmount)}
-              </span>
-            )}
-          </div>
-          {budget && <ProgressBar percent={budget.percentUsed} color={budget.color} />}
-          {budget && (
-            <p className="text-sm text-mid-gray mt-2">
-              Has usado el <span className="font-semibold">{budget.percentUsed}%</span> de tu presupuesto.
-            </p>
-          )}
-          {budget && budget.percentUsed >= 90 && (
-            <p className="flex items-start gap-1.5 text-sm text-ember mt-2 font-medium">
-              <TriangleAlert size={16} className="shrink-0 mt-0.5" aria-hidden="true" />
-              Atención, estás muy cerca de llegar a tu objetivo máximo de gasto este mes.
-            </p>
-          )}
-
-          <div className="border-t border-hairline mt-4 pt-4">
-            <h3 className="font-semibold text-sm mb-2">Límite mensual</h3>
-            <form onSubmit={handleSaveBudget} className="flex flex-wrap gap-2">
-              <div className="flex-1 min-w-[8rem]">
-                <MoneyField value={limitInput} onChange={setLimitInput} placeholder="Monto máximo" required />
-              </div>
-              <Button type="submit">Guardar</Button>
-            </form>
-          </div>
-        </Card>
       </div>
+
+      <PlannedBudget balance={wallet?.balance ?? null} />
 
       {/* Ahorros */}
       <PageTitle title="Ahorros" subtitle="Crea metas de ahorro con nombre y sigue el progreso de cada una." />
@@ -442,6 +509,24 @@ export default function WalletPage() {
               ))}
           </Select>
           <Input placeholder="Descripción (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          {formError && <p className="text-sm text-ember">{formError}</p>}
+          <Button type="submit" className="w-full">
+            Guardar
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal
+        open={limitModalOpen}
+        onClose={() => {
+          setLimitModalOpen(false);
+          setFormError(null);
+        }}
+        title={`Límite de gasto de ${monthLabel}`}
+      >
+        <form onSubmit={handleSaveBudget} className="space-y-3">
+          <p className="text-sm text-mid-gray">Te avisaremos con una notificación cuando te acerques a este monto.</p>
+          <MoneyField value={limitInput} onChange={setLimitInput} placeholder="Monto máximo" required />
           {formError && <p className="text-sm text-ember">{formError}</p>}
           <Button type="submit" className="w-full">
             Guardar

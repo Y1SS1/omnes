@@ -29,6 +29,15 @@ export async function quoteItem(projectId: string, itemId: string) {
   return data;
 }
 
+export async function renameProject(projectId: string, name: string) {
+  const { data } = await api.patch<BudgetProjectSummaryDto>(`/budget-projects/${projectId}/name`, { name });
+  return data;
+}
+
+export async function deleteProject(projectId: string) {
+  await api.delete(`/budget-projects/${projectId}`);
+}
+
 export async function downloadExcel(projectId: string) {
   const { data } = await api.get<Blob>(`/budget-projects/${projectId}/export`, { responseType: "blob" });
   return data;

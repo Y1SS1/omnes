@@ -479,4 +479,97 @@ public class BudgetProjectsControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    private static BudgetProject AddProjectFor(AppDbContext db, Guid userId)
+    {
+        var project = new BudgetProject { UserId = userId, Name = "Pollería" };
+        project.Items.Add(new BudgetItem { Name = "Freidora", Category = "Cocina", Type = BudgetItemType.Asset, EstimatedAmount = 650_000m });
+        db.BudgetProjects.Add(project);
+        db.SaveChanges();
+        return project;
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheProjectItsItemsAndItsWalletCopy()
+    {
+        var (controller, db, userId, _) = NewController();
+        var project = AddProjectFor(db, userId);
+        var other = AddProjectFor(db, userId);
+        db.PlannedItems.Add(new PlannedItem
+        {
+            UserId = userId, BudgetProjectId = project.Id, Name = "Freidora", Category = "Cocina",
+            Type = BudgetItemType.Asset, Amount = 650_000m,
+        });
+        db.SaveChanges();
+
+        var result = await controller.Delete(project.Id);
+
+        Assert.IsType<NoContentResult>(result);
+        Assert.Equal(other.Id, Assert.Single(db.BudgetProjects).Id);
+        Assert.Single(db.BudgetItems);
+        Assert.Empty(db.PlannedItems);
+    }
+
+    [Fact]
+    public async Task Delete_OfAnotherUser_ReturnsNotFound()
+    {
+        var (controller, db, _, _) = NewController();
+        var project = AddProjectFor(db, Guid.NewGuid());
+
+        var result = await controller.Delete(project.Id);
+
+        Assert.IsType<NotFoundResult>(result);
+        Assert.Single(db.BudgetProjects);
+    }
+
+    [Fact]
+    public async Task Rename_ChangesTheTrimmedName()
+    {
+        var (controller, db, userId, _) = NewController();
+        var project = AddProjectFor(db, userId);
+
+        var result = await controller.Rename(project.Id, new RenameBudgetProjectRequest("  Pollería centro  "));
+
+        var summary = Assert.IsType<BudgetProjectSummaryDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("Pollería centro", summary.Name);
+        Assert.Equal(1, summary.ItemCount);
+        Assert.Equal("Pollería centro", db.BudgetProjects.Single().Name);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public async Task Rename_WithoutAName_ReturnsBadRequest(string? name)
+    {
+        var (controller, db, userId, _) = NewController();
+        var project = AddProjectFor(db, userId);
+
+        var result = await controller.Rename(project.Id, new RenameBudgetProjectRequest(name));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Pollería", db.BudgetProjects.Single().Name);
+    }
+
+    [Fact]
+    public async Task Rename_WithTooLongName_ReturnsBadRequest()
+    {
+        var (controller, db, userId, _) = NewController();
+        var project = AddProjectFor(db, userId);
+
+        var result = await controller.Rename(project.Id, new RenameBudgetProjectRequest(new string('a', BudgetExcelReader.MaxTextLength + 1)));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Rename_OfAnotherUser_ReturnsNotFound()
+    {
+        var (controller, db, _, _) = NewController();
+        var project = AddProjectFor(db, Guid.NewGuid());
+
+        var result = await controller.Rename(project.Id, new RenameBudgetProjectRequest("Ajeno"));
+
+        Assert.IsType<NotFoundResult>(result.Result);
+        Assert.Equal("Pollería", db.BudgetProjects.Single().Name);
+    }
 }

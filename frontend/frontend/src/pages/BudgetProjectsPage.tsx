@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, FileSpreadsheet, Paperclip } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, FileSpreadsheet, FolderOpen, Paperclip, Pencil, Trash2 } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
+import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetProjectSummaryDto } from "../api/types";
-import { Button, Card, Input, PageTitle } from "../components/ui";
+import { Button, Card, Input, Modal, PageTitle } from "../components/ui";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -23,10 +24,84 @@ export default function BudgetProjectsPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // The budget the wallet holds, so deleting it can warn that the wallet copy goes too.
+  const [walletProjectId, setWalletProjectId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<BudgetProjectSummaryDto | null>(null);
+  const [newName, setNewName] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // The options panel closes on Escape or on a click anywhere outside it.
+  useEffect(() => {
+    if (!menuFor) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuFor(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuFor(null);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuFor]);
 
   useEffect(() => {
     budgetProjectsApi.getProjects().then(setProjects).catch(() => setLoadFailed(true));
+    plannedItemsApi
+      .getPlannedItems()
+      .then((items) => setWalletProjectId(items[0]?.budgetProjectId ?? null))
+      .catch(() => setWalletProjectId(null));
   }, []);
+
+  const openRename = (project: BudgetProjectSummaryDto) => {
+    setMenuFor(null);
+    setRenaming(project);
+    setNewName(project.name);
+    setRenameError(null);
+  };
+
+  const saveName = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!renaming) return;
+    setSavingName(true);
+    setRenameError(null);
+    try {
+      const updated = await budgetProjectsApi.renameProject(renaming.id, newName.trim());
+      setProjects((current) => current && current.map((p) => (p.id === updated.id ? updated : p)));
+      setRenaming(null);
+    } catch (err) {
+      setRenameError(budgetProjectsApi.apiErrorMessage(err, "No se pudo cambiar el nombre. Intenta de nuevo."));
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const deleteProject = async (project: BudgetProjectSummaryDto) => {
+    setMenuFor(null);
+    const inWallet = project.id === walletProjectId;
+    const question = inWallet
+      ? `¿Borrar "${project.name}"? Es el presupuesto que tienes en tu billetera, así que también se quitará de ahí. No se puede deshacer.`
+      : `¿Borrar "${project.name}"? No se puede deshacer.`;
+    if (!window.confirm(question)) return;
+    setDeletingId(project.id);
+    setListError(null);
+    try {
+      await budgetProjectsApi.deleteProject(project.id);
+      setProjects((current) => current && current.filter((p) => p.id !== project.id));
+      if (inWallet) setWalletProjectId(null);
+    } catch (err) {
+      setListError(budgetProjectsApi.apiErrorMessage(err, "No se pudo borrar el presupuesto. Intenta de nuevo."));
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const chooseFile = (chosen: File | undefined) => {
     if (!chosen) return;
@@ -151,26 +226,94 @@ export default function BudgetProjectsPage() {
         <h2 className="text-lg font-extrabold mb-2">Tus presupuestos</h2>
         {loadFailed && <p className="text-sm text-ember">No se pudieron cargar tus presupuestos.</p>}
         {projects?.length === 0 && <p className="text-sm text-mid-gray">Todavía no has subido ninguna planilla.</p>}
+        {listError && (
+          <p role="alert" className="text-sm text-ember mb-2">
+            {listError}
+          </p>
+        )}
         <div className="divide-y divide-hairline">
-          {projects?.map((project) => (
-            <Link
-              key={project.id}
-              to={`/presupuestos/${project.id}`}
-              className="group flex items-center gap-3 -mx-2 px-2 py-3 rounded-[14px] text-sm hover:bg-surface-alt"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
-                <FileSpreadsheet size={17} />
-              </span>
-              <span className="font-semibold truncate flex-1">{project.name}</span>
-              <span className="text-xs text-mid-gray shrink-0">
-                {project.itemCount} {project.itemCount === 1 ? "ítem" : "ítems"} ·{" "}
-                {new Date(project.createdAt).toLocaleDateString("es-CL")}
-              </span>
-              <ChevronRight size={16} className="shrink-0 text-mid-gray group-hover:text-brand" aria-hidden="true" />
-            </Link>
-          ))}
+          {projects?.map((project) => {
+            const open = menuFor === project.id;
+            return (
+              <div key={project.id} className="relative" ref={open ? menuRef : undefined}>
+                <button
+                  type="button"
+                  onClick={() => setMenuFor(open ? null : project.id)}
+                  aria-haspopup="menu"
+                  aria-expanded={open}
+                  className={`group flex w-full items-center gap-3 -mx-2 px-2 py-3 rounded-[14px] text-left text-sm hover:bg-surface-alt ${
+                    open ? "bg-surface-alt" : ""
+                  }`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+                    <FileSpreadsheet size={17} />
+                  </span>
+                  <span className="font-semibold truncate flex-1">{project.name}</span>
+                  <span className="text-xs text-mid-gray shrink-0">
+                    {project.itemCount} {project.itemCount === 1 ? "ítem" : "ítems"} ·{" "}
+                    {new Date(project.createdAt).toLocaleDateString("es-CL")}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-mid-gray transition-transform group-hover:text-brand ${open ? "rotate-180 text-brand" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {open && (
+                  <div
+                    role="menu"
+                    aria-label={`Opciones de ${project.name}`}
+                    className="absolute right-0 top-full z-20 mt-1 w-56 rounded-[14px] border border-hairline bg-paper p-1.5 shadow-lg"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => navigate(`/presupuestos/${project.id}`)}
+                      className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
+                    >
+                      <FolderOpen size={16} className="text-brand" aria-hidden="true" />
+                      Abrir presupuesto
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => openRename(project)}
+                      className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
+                    >
+                      <Pencil size={16} className="text-brand" aria-hidden="true" />
+                      Cambiar nombre
+                    </button>
+                    <div className="my-1 border-t border-hairline" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => deleteProject(project)}
+                      disabled={deletingId !== null}
+                      className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ember hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 size={16} aria-hidden="true" />
+                      Borrar
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </Card>
+      <Modal open={renaming !== null} onClose={() => setRenaming(null)} title="Cambiar nombre del presupuesto">
+        <form onSubmit={saveName} className="space-y-3">
+          <label htmlFor="rename-budget" className="block text-sm font-medium">
+            Nombre
+          </label>
+          <Input id="rename-budget" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={200} required autoFocus />
+          {renameError && <p className="text-sm text-ember">{renameError}</p>}
+          <Button type="submit" className="w-full" disabled={savingName || newName.trim().length === 0}>
+            {savingName ? "Guardando..." : "Guardar nombre"}
+          </Button>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -92,14 +92,45 @@ export interface NotificationDto {
   createdAt: string;
 }
 
-export interface SavingsComparisonDto {
-  planned: number;
-  real: number;
+// A budget line copied from an imported Excel into the wallet ("Presupuesto planificado").
+export interface PlannedItemDto {
+  id: string;
+  budgetProjectId: string;
+  budgetProjectName: string;
+  name: string;
+  category: string;
+  type: BudgetItemType;
+  amount: number;
+  createdAt: string;
 }
 
-export interface ExpenseCategorySlice {
-  categoryName: string;
-  color: string;
+export interface UpdatePlannedItemRequest {
+  name: string;
+  category: string;
+  type: BudgetItemType;
+  amount: number;
+}
+
+// Reports on the budget the wallet is executing.
+export interface PlannedCategorySlice {
+  category: string;
   amount: number;
   percent: number;
+}
+
+// priceMin/priceMax are null when the asset is not quoted yet or the AI gave no CLP amount.
+export interface AssetQuoteComparison {
+  name: string;
+  estimatedAmount: number;
+  priceMin: number | null;
+  priceMax: number | null;
+}
+
+export interface PlannedBudgetReportDto {
+  projectId: string | null;
+  projectName: string | null;
+  assetsTotal: number;
+  liabilitiesTotal: number;
+  byCategory: PlannedCategorySlice[];
+  assetQuotes: AssetQuoteComparison[];
 }

@@ -1,14 +1,7 @@
 import { api } from "./client";
-import type { ExpenseCategorySlice, SavingsComparisonDto } from "./types";
+import type { PlannedBudgetReportDto } from "./types";
 
-export async function getSavingsComparison(year: number, month: number) {
-  const { data } = await api.get<SavingsComparisonDto>("/reports/savings-comparison", { params: { year, month } });
-  return data;
-}
-
-export async function getExpensesByCategory(year: number, month: number) {
-  const { data } = await api.get<ExpenseCategorySlice[]>("/reports/expenses-by-category", {
-    params: { year, month },
-  });
+export async function getPlannedBudget() {
+  const { data } = await api.get<PlannedBudgetReportDto>("/reports/planned-budget");
   return data;
 }

@@ -20,3 +20,5 @@ public record BudgetProjectDto(Guid Id, string Name, DateTime CreatedAt, IReadOn
 public record BudgetProjectSummaryDto(Guid Id, string Name, DateTime CreatedAt, int ItemCount);
 
 public record UpdateBudgetItemTypeRequest([property: JsonRequired] BudgetItemType Type);
+
+public record RenameBudgetProjectRequest(string? Name);

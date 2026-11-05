@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Download, Sparkles, Star, Wallet } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
+import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
 import { Button, Card, PageTitle, ProgressBar, Select } from "../components/ui";
 
@@ -31,12 +32,20 @@ export default function BudgetProjectPage() {
   const [downloading, setDownloading] = useState(false);
   const [changingType, setChangingType] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The budget the wallet holds right now (only one at a time), if any.
+  const [walletProject, setWalletProject] = useState<{ id: string; name: string } | null>(null);
+  const [transferring, setTransferring] = useState(false);
+  const [transferred, setTransferred] = useState(false);
   const leftPage = useRef(false);
 
   const quoting = progress !== null;
 
   useEffect(() => {
     budgetProjectsApi.getProject(id).then(setProject).catch(() => setNotFound(true));
+    plannedItemsApi
+      .getPlannedItems()
+      .then((items) => setWalletProject(items[0] ? { id: items[0].budgetProjectId, name: items[0].budgetProjectName } : null))
+      .catch(() => setWalletProject(null));
   }, [id]);
 
   // Every remaining quote spends credit, so stop asking for more once the user leaves.
@@ -111,6 +120,28 @@ export default function BudgetProjectPage() {
     }
   };
 
+  const sendToWallet = async () => {
+    if (!project) return;
+    const question = !walletProject
+      ? null
+      : walletProject.id === project.id
+        ? "Este presupuesto ya está en tu billetera. Si lo vuelves a pasar, se reemplazan sus ítems, incluidos los cambios que hiciste en la billetera. ¿Continuar?"
+        : `Tu billetera tiene el presupuesto "${walletProject.name}". Esto lo reemplaza por "${project.name}". ¿Continuar?`;
+    if (question && !window.confirm(question)) return;
+    setTransferring(true);
+    setTransferred(false);
+    setError(null);
+    try {
+      await plannedItemsApi.transferFromProject(project.id);
+      setWalletProject({ id: project.id, name: project.name });
+      setTransferred(true);
+    } catch (err) {
+      setError(budgetProjectsApi.apiErrorMessage(err, "No se pudo pasar a la billetera. Intenta de nuevo."));
+    } finally {
+      setTransferring(false);
+    }
+  };
+
   const download = async () => {
     if (!project) return;
     setDownloading(true);
@@ -134,7 +165,7 @@ export default function BudgetProjectPage() {
     return (
       <div className="text-center py-10">
         <p className="text-sm text-mid-gray mb-3">No encontramos este presupuesto.</p>
-        <Link to="/presupuestos" className="text-sm font-medium underline">
+        <Link to="/" className="text-sm font-medium underline">
           Volver a tus presupuestos
         </Link>
       </div>
@@ -150,7 +181,7 @@ export default function BudgetProjectPage() {
 
   return (
     <div>
-      <Link to="/presupuestos" className="inline-flex items-center gap-1 text-xs font-medium text-mid-gray hover:text-ink">
+      <Link to="/" className="inline-flex items-center gap-1 text-xs font-medium text-mid-gray hover:text-ink">
         <ArrowLeft size={14} aria-hidden="true" />
         Tus presupuestos
       </Link>
@@ -165,8 +196,21 @@ export default function BudgetProjectPage() {
             <Download size={16} aria-hidden="true" />
             {downloading ? "Descargando..." : "Descargar Excel"}
           </Button>
+          <Button variant="secondary" onClick={sendToWallet} disabled={quoting || transferring || changingType}>
+            <Wallet size={16} aria-hidden="true" />
+            {transferring ? "Pasando..." : walletProject?.id === project.id ? "Actualizar en la billetera" : "Pasar a la billetera"}
+          </Button>
         </div>
       </div>
+
+      {transferred && (
+        <p role="status" className="text-sm mb-4 rounded-[14px] bg-brand-soft px-4 py-3">
+          Listo, los ítems de este presupuesto están en tu billetera.{" "}
+          <Link to="/wallet" className="font-semibold text-brand hover:underline">
+            Ver en la billetera
+          </Link>
+        </p>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <Stat label="Activos estimados" value={clp.format(sum(assets))} detail={`${assetCount} ${assetCount === 1 ? "ítem" : "ítems"} para cotizar`} />

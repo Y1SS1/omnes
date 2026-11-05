@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, ChartLine, FileSpreadsheet, House, Menu, Users, Wallet, X, type LucideIcon } from "lucide-react";
+import { Bell, ChartLine, House, Menu, Users, Wallet, X, type LucideIcon } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Logo } from "./Logo";
@@ -7,12 +7,12 @@ import { Avatar } from "./ui";
 import * as notificationsApi from "../api/notifications";
 import type { NotificationDto } from "../api/types";
 
-type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
+// `alsoActiveOn` keeps a tab highlighted on its detail pages, which live under another path.
+type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean; alsoActiveOn?: string };
 
 const navItems: NavItem[] = [
-  { to: "/", label: "Inicio", icon: House, end: true },
+  { to: "/", label: "Inicio", icon: House, end: true, alsoActiveOn: "/presupuestos/" },
   { to: "/wallet", label: "Billetera", icon: Wallet },
-  { to: "/presupuestos", label: "Presupuestos", icon: FileSpreadsheet },
   { to: "/reports", label: "Reportes", icon: ChartLine },
 ];
 
@@ -88,9 +88,12 @@ export default function Layout() {
     navigate("/login");
   };
 
-  const pillClass = ({ isActive }: { isActive: boolean }) =>
+  const isItemActive = (item: NavItem, isActive: boolean) =>
+    isActive || (item.alsoActiveOn !== undefined && location.pathname.startsWith(item.alsoActiveOn));
+
+  const pillClass = (item: NavItem) => ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-      isActive ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
+      isItemActive(item, isActive) ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
     }`;
 
   const unreadBadge = unreadCount > 0 && (
@@ -110,7 +113,7 @@ export default function Layout() {
 
           <nav className="hidden md:flex items-center gap-1 overflow-x-auto flex-1 min-w-0 ml-10">
             {items.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={pillClass}>
+              <NavLink key={item.to} to={item.to} end={item.end} className={pillClass(item)}>
                 <item.icon size={16} aria-hidden="true" />
                 {item.label}
               </NavLink>
@@ -164,7 +167,7 @@ export default function Layout() {
                 end={item.end}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold ${
-                    isActive ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
+                    isItemActive(item, isActive) ? "bg-highlight text-ink" : "text-[#c9c7f0] hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
