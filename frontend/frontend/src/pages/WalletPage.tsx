@@ -60,6 +60,7 @@ export default function WalletPage() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
 
   const [newBalance, setNewBalance] = useState<number | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
@@ -185,9 +186,15 @@ export default function WalletPage() {
   };
 
   const removeTx = async (id: string) => {
-    await walletApi.deleteTransaction(id);
-    loadWalletData();
-    loadBudget();
+    setTxError(null);
+    try {
+      await walletApi.deleteTransaction(id);
+      loadWalletData();
+      loadBudget();
+    } catch (err) {
+      // e.g. deleting an income that was already spent would leave the balance negative.
+      setTxError(errorMessage(err));
+    }
   };
 
   const handleSaveBudget = async (e: React.FormEvent) => {
@@ -351,6 +358,12 @@ export default function WalletPage() {
         {/* Movimientos */}
         <Card>
           <h2 className="text-lg font-extrabold mb-3">Movimientos</h2>
+          {txError && !historyModalOpen && (
+            <p role="alert" className="mb-3 flex items-start gap-1.5 text-sm text-ember">
+              <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {txError}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setTxModalOpen(true)}>+ Nuevo gasto/ingreso</Button>
             <Button variant="secondary" onClick={() => setBalanceModalOpen(true)}>
@@ -534,7 +547,19 @@ export default function WalletPage() {
         </form>
       </Modal>
 
-      <Modal open={historyModalOpen} onClose={() => setHistoryModalOpen(false)} title="Historial completo de movimientos">
+      <Modal
+        open={historyModalOpen}
+        onClose={() => {
+          setHistoryModalOpen(false);
+          setTxError(null);
+        }}
+        title="Historial completo de movimientos"
+      >
+        {txError && (
+          <p role="alert" className="mb-3 text-sm text-ember">
+            {txError}
+          </p>
+        )}
         {transactions.length === 0 ? (
           <p className="text-sm text-mid-gray">Sin movimientos todavía.</p>
         ) : (

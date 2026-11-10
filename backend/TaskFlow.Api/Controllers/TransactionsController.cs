@@ -51,6 +51,9 @@ public class TransactionsController : ControllerBase
 
         var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == _currentUser.UserId);
         if (wallet is null) return NotFound("Billetera no encontrada.");
+        // Bug #45: an expense larger than the balance would leave it negative.
+        if (req.Type == TransactionType.Expense && req.Amount > wallet.Balance)
+            return BadRequest($"Saldo disponible insuficiente: tienes {MoneyText.Clp(wallet.Balance)}.");
 
         var date = req.Date ?? DateTime.UtcNow;
         var transaction = new Transaction
@@ -106,6 +109,11 @@ public class TransactionsController : ControllerBase
         if (transaction is null) return NotFound();
 
         var wallet = await _db.Wallets.FirstAsync(w => w.UserId == _currentUser.UserId);
+        // Removing an income takes its money back out; if part of it was already spent,
+        // the balance would go negative (same rule as bug #45).
+        if (transaction.Type == TransactionType.Income && transaction.Amount > wallet.Balance)
+            return BadRequest(
+                $"No puedes borrar este ingreso: tu saldo quedaría en negativo. Tienes {MoneyText.Clp(wallet.Balance)} y el ingreso es de {MoneyText.Clp(transaction.Amount)}.");
         wallet.Balance -= transaction.Type == TransactionType.Income ? transaction.Amount : -transaction.Amount;
 
         _db.Transactions.Remove(transaction);

@@ -124,4 +124,66 @@ public class TransactionsControllerTests
         Assert.Single(list);
         Assert.Equal(200m, list[0].Amount);
     }
+
+    [Fact]
+    public async Task Create_ExpenseLargerThanBalance_IsRejectedAndChangesNothing()
+    {
+        var (controller, db, userId) = NewController(startingBalance: 320_000m);
+
+        var result = await controller.Create(new CreateTransactionRequest(500_000m, TransactionType.Expense, null, null, null));
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Saldo disponible insuficiente: tienes $320.000.", bad.Value);
+        Assert.Equal(320_000m, db.Wallets.Single(w => w.UserId == userId).Balance);
+        Assert.Empty(db.Transactions);
+    }
+
+    [Fact]
+    public async Task Create_ExpenseEqualToBalance_LeavesItAtZero()
+    {
+        var (controller, db, userId) = NewController(startingBalance: 1000m);
+
+        var result = await controller.Create(new CreateTransactionRequest(1000m, TransactionType.Expense, null, null, null));
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(0m, db.Wallets.Single(w => w.UserId == userId).Balance);
+    }
+
+    [Fact]
+    public async Task Create_IncomeLargerThanBalance_IsAllowed()
+    {
+        var (controller, db, userId) = NewController(startingBalance: 0m);
+
+        var result = await controller.Create(new CreateTransactionRequest(5000m, TransactionType.Income, null, null, null));
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(5000m, db.Wallets.Single(w => w.UserId == userId).Balance);
+    }
+
+    [Fact]
+    public async Task Delete_IncomeAlreadySpent_IsRejectedAndChangesNothing()
+    {
+        var (controller, db, userId) = NewController(startingBalance: 0m);
+        var income = Assert.IsType<TransactionDto>(Assert.IsType<OkObjectResult>(
+            (await controller.Create(new CreateTransactionRequest(500m, TransactionType.Income, null, null, null))).Result).Value);
+        await controller.Create(new CreateTransactionRequest(400m, TransactionType.Expense, null, null, null));
+
+        var result = await controller.Delete(income.Id);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(100m, db.Wallets.Single(w => w.UserId == userId).Balance);
+        Assert.Equal(2, db.Transactions.Count());
+    }
+
+    [Fact]
+    public async Task Delete_IncomeNotSpent_SubtractsIt()
+    {
+        var (controller, db, userId) = NewController(startingBalance: 1000m);
+        var income = Assert.IsType<TransactionDto>(Assert.IsType<OkObjectResult>(
+            (await controller.Create(new CreateTransactionRequest(500m, TransactionType.Income, null, null, null))).Result).Value);
+
+        Assert.IsType<NoContentResult>(await controller.Delete(income.Id));
+
+        Assert.Equal(1000m, db.Wallets.Single(w => w.UserId == userId).Balance);
+    }
 }
