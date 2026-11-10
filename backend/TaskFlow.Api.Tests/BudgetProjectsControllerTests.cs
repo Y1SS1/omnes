@@ -572,4 +572,81 @@ public class BudgetProjectsControllerTests
         Assert.IsType<NotFoundResult>(result.Result);
         Assert.Equal("Pollería", db.BudgetProjects.Single().Name);
     }
+
+    private static CreateBudgetProjectRequest NewBudget(params CreateBudgetItemRequest[] items) =>
+        new("Pollería generada", items.ToList());
+
+    private static CreateBudgetItemRequest Fryer() => new("Freidora industrial 2 canastos", "Cocina", BudgetItemType.Asset, 650_000m);
+
+    [Fact]
+    public async Task Create_SavesTheReviewedItemsWithoutCallingTheAi()
+    {
+        var (controller, db, userId, classifier) = NewController();
+
+        var result = await controller.Create(NewBudget(
+            Fryer(), new CreateBudgetItemRequest("  Arriendo (mensual) ", " Gastos fijos ", BudgetItemType.Liability, 850_000.456m)));
+
+        var dto = Assert.IsType<BudgetProjectDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal("Pollería generada", dto.Name);
+        Assert.Equal(2, dto.Items.Count);
+        var rent = Assert.Single(dto.Items, i => i.Type == BudgetItemType.Liability);
+        Assert.Equal("Arriendo (mensual)", rent.Name);
+        Assert.Equal("Gastos fijos", rent.Category);
+        Assert.Equal(850_000.46m, rent.EstimatedAmount);
+        Assert.Equal(userId, db.BudgetProjects.Single().UserId);
+        Assert.Equal(0, classifier.Calls);
+    }
+
+    [Fact]
+    public async Task Create_WithoutName_ReturnsBadRequest()
+    {
+        var (controller, db, _, _) = NewController();
+
+        var result = await controller.Create(new CreateBudgetProjectRequest("  ", [Fryer()]));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Empty(db.BudgetProjects);
+    }
+
+    [Fact]
+    public async Task Create_WithoutItems_ReturnsBadRequest()
+    {
+        var (controller, _, _, _) = NewController();
+
+        var result = await controller.Create(NewBudget());
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Create_WithTooManyItems_ReturnsBadRequest()
+    {
+        var (controller, _, _, _) = NewController();
+
+        var result = await controller.Create(NewBudget(Enumerable.Repeat(Fryer(), BudgetExcelReader.MaxItems + 1).ToArray()));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task Create_WithAnInvalidItem_NamesTheItemAndSavesNothing()
+    {
+        var (controller, db, _, _) = NewController();
+
+        var result = await controller.Create(NewBudget(Fryer(), new CreateBudgetItemRequest("Mesa", "Mobiliario", BudgetItemType.Asset, -1m)));
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.StartsWith("Ítem 2:", (string)bad.Value!);
+        Assert.Empty(db.BudgetProjects);
+    }
+
+    [Fact]
+    public async Task Create_WithUnknownType_ReturnsBadRequest()
+    {
+        var (controller, _, _, _) = NewController();
+
+        var result = await controller.Create(NewBudget(new CreateBudgetItemRequest("Mesa", "Mobiliario", (BudgetItemType)5, 1m)));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
 }

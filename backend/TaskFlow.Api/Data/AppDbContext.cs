@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<BudgetProject> BudgetProjects => Set<BudgetProject>();
     public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
     public DbSet<PlannedItem> PlannedItems => Set<PlannedItem>();
+    public DbSet<AiUsage> AiUsages => Set<AiUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,6 +105,14 @@ public class AppDbContext : DbContext
             e.Property(i => i.EstimatedAmount).HasPrecision(14, 2);
             e.HasOne(i => i.BudgetProject).WithMany(p => p.Items)
                 .HasForeignKey(i => i.BudgetProjectId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AiUsage>(e =>
+        {
+            e.Property(u => u.Kind).HasMaxLength(40);
+            e.HasIndex(u => new { u.UserId, u.Kind, u.CreatedAt });
+            e.HasOne(u => u.User).WithMany()
+                .HasForeignKey(u => u.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PlannedItem>(e =>

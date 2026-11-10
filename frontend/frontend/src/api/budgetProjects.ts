@@ -1,11 +1,30 @@
 import { api } from "./client";
-import type { BudgetItemDto, BudgetItemType, BudgetProjectDto, BudgetProjectSummaryDto } from "./types";
+import type {
+  BudgetDraftDto,
+  BudgetDraftItemDto,
+  BudgetItemDto,
+  BudgetItemType,
+  BudgetProjectDto,
+  BudgetProjectSummaryDto,
+} from "./types";
 
 export async function importProject(name: string, file: File) {
   const form = new FormData();
   form.append("name", name);
   form.append("file", file);
   const { data } = await api.post<BudgetProjectDto>("/budget-projects/import", form);
+  return data;
+}
+
+// Asks the AI to propose a budget from a description. Nothing is saved.
+export async function draftBudget(description: string, targetAmount: number | null) {
+  const { data } = await api.post<BudgetDraftDto>("/budget-drafts", { description, targetAmount });
+  return data;
+}
+
+// Saves a budget from a list the user reviewed (an AI draft, edited).
+export async function createProject(name: string, items: BudgetDraftItemDto[]) {
+  const { data } = await api.post<BudgetProjectDto>("/budget-projects", { name, items });
   return data;
 }
 

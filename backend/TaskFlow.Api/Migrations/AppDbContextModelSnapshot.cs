@@ -22,6 +22,30 @@ namespace TaskFlow.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("TaskFlow.Api.Models.AiUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Kind", "CreatedAt");
+
+                    b.ToTable("AiUsages");
+                });
+
             modelBuilder.Entity("TaskFlow.Api.Models.Budget", b =>
                 {
                     b.Property<Guid>("Id")
@@ -377,6 +401,17 @@ namespace TaskFlow.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Wallets");
+                });
+
+            modelBuilder.Entity("TaskFlow.Api.Models.AiUsage", b =>
+                {
+                    b.HasOne("TaskFlow.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TaskFlow.Api.Models.Budget", b =>

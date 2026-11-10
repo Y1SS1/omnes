@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, Sparkles, Star, Wallet } from "lucide-react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, CircleCheck, Download, Sparkles, Star, Wallet, X } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
@@ -26,6 +26,13 @@ async function quoteWithRetry(projectId: string, itemId: string) {
 
 export default function BudgetProjectPage() {
   const { id = "" } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Set by the page that just created this budget, so the first visit says what to do next.
+  const [createdFrom, setCreatedFrom] = useState<"ai" | "excel" | null>(() => {
+    const created = (location.state as { created?: unknown } | null)?.created;
+    return created === "ai" || created === "excel" ? created : null;
+  });
   const [project, setProject] = useState<BudgetProjectDto | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -36,6 +43,11 @@ export default function BudgetProjectPage() {
   const [walletProject, setWalletProject] = useState<{ id: string; name: string } | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [transferred, setTransferred] = useState(false);
+
+  // Shown once: drop the flag from the history entry so a reload does not repeat the notice.
+  useEffect(() => {
+    if (location.state) navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
   const leftPage = useRef(false);
 
   const quoting = progress !== null;
@@ -202,6 +214,26 @@ export default function BudgetProjectPage() {
           </Button>
         </div>
       </div>
+
+      {createdFrom && (
+        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
+          <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
+          <p className="flex-1">
+            <span className="font-semibold">
+              {createdFrom === "ai" ? "Presupuesto creado con IA." : "Presupuesto creado desde tu planilla."}
+            </span>{" "}
+            Siguiente paso: aprieta "Generar presupuesto actualizado" para cotizar los activos en internet.
+          </p>
+          <button
+            type="button"
+            onClick={() => setCreatedFrom(null)}
+            className="shrink-0 rounded-full p-1 text-mid-gray hover:text-ink"
+            aria-label="Cerrar aviso"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {transferred && (
         <p role="status" className="text-sm mb-4 rounded-[14px] bg-brand-soft px-4 py-3">

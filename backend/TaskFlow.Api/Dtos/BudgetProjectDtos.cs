@@ -22,3 +22,19 @@ public record BudgetProjectSummaryDto(Guid Id, string Name, DateTime CreatedAt, 
 public record UpdateBudgetItemTypeRequest([property: JsonRequired] BudgetItemType Type);
 
 public record RenameBudgetProjectRequest(string? Name);
+
+// "Describir con IA": the AI proposes items from a description; nothing is saved yet.
+public record DraftBudgetRequest(string? Description, decimal? TargetAmount);
+
+public record BudgetDraftItemDto(string Name, string Category, BudgetItemType Type, decimal EstimatedAmount);
+
+public record BudgetDraftDto(IReadOnlyList<BudgetDraftItemDto> Items, int RemainingToday);
+
+// Saves a budget from a list the user reviewed (the AI draft, edited), with the Excel's limits.
+public record CreateBudgetItemRequest(
+    string? Name,
+    string? Category,
+    [property: JsonRequired] BudgetItemType Type,
+    [property: JsonRequired] decimal EstimatedAmount);
+
+public record CreateBudgetProjectRequest(string? Name, List<CreateBudgetItemRequest>? Items);

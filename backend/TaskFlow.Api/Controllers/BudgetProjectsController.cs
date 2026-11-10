@@ -90,6 +90,51 @@ public partial class BudgetProjectsController : ControllerBase
         return Ok(ToDto(project));
     }
 
+    // Saves a budget from a list the user already reviewed (an AI draft they edited), so no
+    // AI runs here; the types are the user's. Same limits as an imported Excel.
+    [HttpPost]
+    public async Task<ActionResult<BudgetProjectDto>> Create(CreateBudgetProjectRequest req)
+    {
+        var projectName = req.Name?.Trim();
+        if (string.IsNullOrEmpty(projectName))
+            return BadRequest("El nombre del proyecto es obligatorio.");
+        if (projectName.Length > BudgetExcelReader.MaxTextLength)
+            return BadRequest($"El nombre del proyecto no puede superar los {BudgetExcelReader.MaxTextLength} caracteres.");
+        if (req.Items is null || req.Items.Count == 0)
+            return BadRequest("El presupuesto debe tener al menos un ítem.");
+        if (req.Items.Count > BudgetExcelReader.MaxItems)
+            return BadRequest($"El presupuesto no puede tener más de {BudgetExcelReader.MaxItems} ítems.");
+
+        var project = new BudgetProject { UserId = _currentUser.UserId, Name = projectName };
+        for (var i = 0; i < req.Items.Count; i++)
+        {
+            var item = req.Items[i];
+            var name = item.Name?.Trim() ?? string.Empty;
+            var category = item.Category?.Trim() ?? string.Empty;
+            var row = $"Ítem {i + 1}";
+            if (name.Length == 0) return BadRequest($"{row}: falta el nombre.");
+            if (category.Length == 0) return BadRequest($"{row}: falta la categoría.");
+            if (name.Length > BudgetExcelReader.MaxTextLength || category.Length > BudgetExcelReader.MaxTextLength)
+                return BadRequest($"{row}: el nombre y la categoría no pueden superar los {BudgetExcelReader.MaxTextLength} caracteres.");
+            // The JSON enum converter still accepts raw numbers such as 5.
+            if (!Enum.IsDefined(item.Type)) return BadRequest($"{row}: el tipo debe ser Asset o Liability.");
+            if (!MoneyValidation.IsWithinRange(item.EstimatedAmount))
+                return BadRequest($"{row}: el monto debe estar entre 0 y {MoneyValidation.MaxAmount:N0}.");
+
+            project.Items.Add(new BudgetItem
+            {
+                Name = name,
+                Category = category,
+                Type = item.Type,
+                EstimatedAmount = Math.Round(item.EstimatedAmount, 2),
+            });
+        }
+
+        _db.BudgetProjects.Add(project);
+        await _db.SaveChangesAsync();
+        return Ok(ToDto(project));
+    }
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<BudgetProjectSummaryDto>>> List()
     {

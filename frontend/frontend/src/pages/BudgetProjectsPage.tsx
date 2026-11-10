@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, FileSpreadsheet, FolderOpen, Paperclip, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, FileSpreadsheet, FolderOpen, Paperclip, Pencil, Sparkles, Trash2 } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetProjectSummaryDto } from "../api/types";
 import { Button, Card, Input, Modal, PageTitle } from "../components/ui";
+import { AiBudgetDraft } from "../components/AiBudgetDraft";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -23,6 +24,8 @@ export default function BudgetProjectsPage() {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // How the new budget starts: an Excel the user uploads, or a description the AI turns into a list.
+  const [mode, setMode] = useState<"excel" | "ai">("excel");
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The budget the wallet holds, so deleting it can warn that the wallet copy goes too.
   const [walletProjectId, setWalletProjectId] = useState<string | null>(null);
@@ -132,7 +135,7 @@ export default function BudgetProjectsPage() {
     setError(null);
     try {
       const project = await budgetProjectsApi.importProject(name.trim(), file);
-      navigate(`/presupuestos/${project.id}`);
+      navigate(`/presupuestos/${project.id}`, { state: { created: "excel" } });
     } catch (err) {
       setError(budgetProjectsApi.apiErrorMessage(err, "No se pudo subir la planilla. Vuelve a adjuntarla e intenta de nuevo."));
       setUploading(false);
@@ -141,85 +144,116 @@ export default function BudgetProjectsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <PageTitle title="Presupuestos" subtitle="Sube tu planilla y la IA separará tus activos y pasivos." />
+      <PageTitle title="Presupuestos" subtitle="Sube tu planilla o describe tu proyecto, y la IA arma y cotiza tu presupuesto." />
 
       <Card className="mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="budget-name" className="block text-sm font-medium mb-1">
-              Nombre del presupuesto
-            </label>
-            <Input
-              id="budget-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Local de pollos"
-              maxLength={200}
-              required
-              disabled={uploading}
-            />
-          </div>
-
-          <label
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            className={`block rounded-[18px] border-2 border-dashed p-6 text-center transition-colors focus-within:border-brand ${
-              uploading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-            } ${dragging ? "border-brand bg-brand-soft" : "border-hairline hover:border-brand/50 hover:bg-surface-alt"}`}
+        <div role="tablist" aria-label="Cómo crear el presupuesto" className="mb-4 inline-flex rounded-full bg-canvas p-1">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "excel"}
+            onClick={() => setMode("excel")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              mode === "excel" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
+            }`}
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx"
-              className="sr-only"
-              disabled={uploading}
-              onChange={(e) => chooseFile(e.target.files?.[0])}
-            />
-            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-on-highlight" aria-hidden="true">
-              <Paperclip size={20} />
+            <FileSpreadsheet size={15} aria-hidden="true" />
+            Subir Excel
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "ai"}
+            onClick={() => setMode("ai")}
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              mode === "ai" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
+            }`}
+          >
+            <Sparkles size={15} aria-hidden="true" />
+            Describir con IA
+          </button>
+        </div>
+
+        {mode === "ai" ? (
+          <AiBudgetDraft />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="budget-name" className="block text-sm font-medium mb-1">
+                Nombre del presupuesto
+              </label>
+              <Input
+                id="budget-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Local de pollos"
+                maxLength={200}
+                required
+                disabled={uploading}
+              />
             </div>
-            {file ? (
-              <div className="text-sm font-medium break-all">{file.name}</div>
-            ) : (
-              <>
-                <div className="text-sm font-medium">
-                  <span className="hidden md:inline">Arrastra tu planilla aquí o haz clic para adjuntarla</span>
-                  <span className="md:hidden">Toca para adjuntar tu planilla</span>
-                </div>
-                <div className="text-xs text-mid-gray mt-1">Solo .xlsx, máximo 5 MB</div>
-              </>
+
+            <label
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              className={`block rounded-[18px] border-2 border-dashed p-6 text-center transition-colors focus-within:border-brand ${
+                uploading ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+              } ${dragging ? "border-brand bg-brand-soft" : "border-hairline hover:border-brand/50 hover:bg-surface-alt"}`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx"
+                className="sr-only"
+                disabled={uploading}
+                onChange={(e) => chooseFile(e.target.files?.[0])}
+              />
+              <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-on-highlight" aria-hidden="true">
+                <Paperclip size={20} />
+              </div>
+              {file ? (
+                <div className="text-sm font-medium break-all">{file.name}</div>
+              ) : (
+                <>
+                  <div className="text-sm font-medium">
+                    <span className="hidden md:inline">Arrastra tu planilla aquí o haz clic para adjuntarla</span>
+                    <span className="md:hidden">Toca para adjuntar tu planilla</span>
+                  </div>
+                  <div className="text-xs text-mid-gray mt-1">Solo .xlsx, máximo 5 MB</div>
+                </>
+              )}
+            </label>
+
+            {file && !uploading && (
+              <button type="button" onClick={removeFile} className="text-xs text-mid-gray hover:text-ink">
+                Quitar archivo
+              </button>
             )}
-          </label>
 
-          {file && !uploading && (
-            <button type="button" onClick={removeFile} className="text-xs text-mid-gray hover:text-ink">
-              Quitar archivo
-            </button>
-          )}
+            <div className="text-xs text-mid-gray">
+              <p>
+                Tu planilla debe tener estas columnas: <span className="text-ink font-medium">Nombre | Categoría | Monto estimado</span>
+              </p>
+              <p className="mt-1">Máximo 50 ítems. Usa nombres específicos, como "Servilletas, paquete de 100".</p>
+            </div>
 
-          <div className="text-xs text-mid-gray">
-            <p>
-              Tu planilla debe tener estas columnas: <span className="text-ink font-medium">Nombre | Categoría | Monto estimado</span>
-            </p>
-            <p className="mt-1">Máximo 50 ítems. Usa nombres específicos, como "Servilletas, paquete de 100".</p>
-          </div>
+            {error && (
+              <p role="alert" className="text-sm text-ember whitespace-pre-line">
+                {error}
+              </p>
+            )}
 
-          {error && (
-            <p role="alert" className="text-sm text-ember whitespace-pre-line">
-              {error}
-            </p>
-          )}
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={uploading}>
-              {uploading ? "Clasificando..." : "Subir planilla"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={uploading}>
+                {uploading ? "Clasificando..." : "Subir planilla"}
+              </Button>
+            </div>
+          </form>
+        )}
       </Card>
 
       <Card>

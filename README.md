@@ -15,7 +15,7 @@ Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y comp
 
 | Módulo | Qué hace |
 |---|---|
-| **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems). La IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza los activos con búsqueda web, de 5 en 5 y con barra de progreso. Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
+| **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems) o **describe tu proyecto** ("una pollería pequeña para 20 personas") y la IA arma una lista que revisas y editas antes de guardarla (máximo 10 por día). Con el Excel, la IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza los activos con búsqueda web, de 5 en 5 y con barra de progreso. Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
 | **Billetera** | Resumen (saldo, fondo de ahorro, gasto del mes con límite y alerta al 90 %, metas), movimientos de ingresos y gastos, y metas de ahorro con cuota mensual. Incluye el **presupuesto planificado**: los ítems del presupuesto en ejecución, editables y comparados con el saldo. |
 | **Reportes** | Tu estimado vs. el precio que encontró la IA (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
 | **Trabajadores** | El administrador crea cuentas de trabajador. Roles: Admin y Trabajador. |

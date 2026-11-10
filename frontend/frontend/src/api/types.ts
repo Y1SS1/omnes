@@ -128,3 +128,16 @@ export interface PlannedBudgetReportDto {
   byCategory: PlannedCategorySlice[];
   assetQuotes: AssetQuoteComparison[];
 }
+
+// "Describir con IA": a budget the AI proposes from a description, not saved until reviewed.
+export interface BudgetDraftItemDto {
+  name: string;
+  category: string;
+  type: BudgetItemType;
+  estimatedAmount: number;
+}
+
+export interface BudgetDraftDto {
+  items: BudgetDraftItemDto[];
+  remainingToday: number;
+}
