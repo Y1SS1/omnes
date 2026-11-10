@@ -101,12 +101,12 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
       {items !== null && items.length === 0 && (
         <Card>
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-highlight text-ink" aria-hidden="true">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-highlight text-on-highlight" aria-hidden="true">
               <FileSpreadsheet size={18} />
             </span>
             <p className="text-sm text-mid-gray">
               Todavía no tienes un presupuesto en tu billetera. Abre uno en{" "}
-              <Link to="/" className="font-semibold text-brand hover:underline">
+              <Link to="/" className="font-semibold text-accent hover:underline">
                 Inicio
               </Link>{" "}
               y aprieta "Pasar a la billetera".
@@ -192,7 +192,7 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
                           <td className="px-2 py-2.5">
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                                item.type === "Asset" ? "bg-brand-soft text-brand" : "bg-canvas text-mid-gray"
+                                item.type === "Asset" ? "bg-brand-soft text-accent" : "bg-canvas text-mid-gray"
                               }`}
                             >
                               {TYPE_LABEL[item.type]}
@@ -203,14 +203,14 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => openEditor(item)}
-                                className="rounded-full p-1.5 text-mid-gray hover:bg-brand-soft hover:text-brand"
+                                className="rounded-full p-1.5 text-mid-gray hover:bg-brand-soft hover:text-accent"
                                 aria-label={`Editar ${item.name}`}
                               >
                                 <Pencil size={15} aria-hidden="true" />
                               </button>
                               <button
                                 onClick={() => remove(item)}
-                                className="rounded-full p-1.5 text-mid-gray hover:bg-red-50 hover:text-ember"
+                                className="rounded-full p-1.5 text-mid-gray hover:bg-danger-soft hover:text-ember"
                                 aria-label={`Quitar ${item.name}`}
                               >
                                 <Trash2 size={15} aria-hidden="true" />

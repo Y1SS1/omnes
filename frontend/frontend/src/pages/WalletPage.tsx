@@ -38,7 +38,7 @@ function TransactionRow({ t, onDelete, formatMoney }: { t: TransactionDto; onDel
         {t.type === "Income" ? "+" : "-"}
         {formatMoney(t.amount)}
       </div>
-      <button onClick={() => onDelete(t.id)} className="rounded-full p-1 text-mid-gray hover:bg-red-50 hover:text-ember" aria-label="Borrar movimiento">
+      <button onClick={() => onDelete(t.id)} className="rounded-full p-1 text-mid-gray hover:bg-danger-soft hover:text-ember" aria-label="Borrar movimiento">
         <X size={15} aria-hidden="true" />
       </button>
     </li>
@@ -280,7 +280,7 @@ export default function WalletPage() {
       <PageTitle title="Billetera" subtitle="Tu saldo, presupuesto y ahorros en un solo lugar." />
 
       {loadError && (
-        <div className="mb-4 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-ember flex items-center justify-between gap-3">
+        <div className="mb-4 rounded-[18px] border border-ember/40 bg-danger-soft px-4 py-3 text-sm text-ember flex items-center justify-between gap-3">
           <span>{loadError}</span>
           <Button variant="secondary" onClick={loadWalletData}>
             Reintentar
@@ -304,7 +304,7 @@ export default function WalletPage() {
           {hasUnassignedSavings && (
             <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs">
               <span className="text-mid-gray">{formatMoney(unassignedSavings)} sin meta</span>
-              <button onClick={handleReleaseUnassigned} className="font-semibold text-brand hover:underline">
+              <button onClick={handleReleaseUnassigned} className="font-semibold text-accent hover:underline">
                 Devolver al saldo
               </button>
             </div>
@@ -313,7 +313,7 @@ export default function WalletPage() {
         <Card>
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm text-mid-gray">Gastado en {monthLabel}</p>
-            <button onClick={() => setLimitModalOpen(true)} className="text-xs font-semibold text-brand hover:underline shrink-0">
+            <button onClick={() => setLimitModalOpen(true)} className="text-xs font-semibold text-accent hover:underline shrink-0">
               {hasBudgetLimit ? "Editar límite" : "Definir límite"}
             </button>
           </div>
@@ -375,7 +375,7 @@ export default function WalletPage() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-sm">Últimos movimientos</h3>
               {transactions.length > 4 && (
-                <button onClick={() => setHistoryModalOpen(true)} className="text-xs text-brand font-semibold hover:underline">
+                <button onClick={() => setHistoryModalOpen(true)} className="text-xs text-accent font-semibold hover:underline">
                   Ver historial completo
                 </button>
               )}

@@ -1,25 +1,40 @@
 @import "tailwindcss";
 
-/* "Boleta de cotización" style: deep indigo ink, a highlighter yellow for what
-   matters most, and a tangerine accent used sparingly. */
+/* Dark theme: near-black ground (#111217), light blue-grey text (#DFE5EB) and a
+   red (#EF233C) reserved for what matters most. Where white text sits on red the
+   red is a shade darker (#D90429) so it keeps a 4.5:1 contrast; red used as text
+   on the dark ground is a lighter shade (#FF5C70) for the same reason. */
 @theme {
-  --color-canvas: #f4f4fb;
-  --color-paper: #ffffff;
-  --color-surface-alt: #f8f8fd;
-  --color-ink: #1d1a4f;
-  --color-ink-soft: #2c2875;
-  --color-mid-gray: #615e8a;
-  --color-hairline: #e2e2f0;
-  --color-ember: #d92d20;
-  --color-brand: #3b2fd6;
-  --color-brand-strong: #2f24b8;
-  --color-brand-soft: #ecebfd;
-  --color-highlight: #e9ff6b;
-  --color-tangerine: #ff6b3d;
-  --color-mint: #0e8f62;
+  --color-canvas: #111217;
+  --color-paper: #1b1d24;
+  --color-surface-alt: #22252d;
+  --color-night: #0a0b0e;
+  --color-ink: #dfe5eb;
+  --color-ink-soft: #c5ccd4;
+  --color-mid-gray: #9aa3ad;
+  --color-hairline: #2c3039;
+  --color-ember: #ff6b7d;
+  --color-danger-soft: #3a1418;
+  --color-danger-soft-strong: #4d1a21;
+  --color-warn: #f2b84b;
+  --color-warn-soft: #2b2416;
+  --color-brand: #d90429;
+  --color-brand-strong: #b8031f;
+  --color-brand-soft: #3a141a;
+  --color-accent: #ff5c70;
+  --color-signal: #ef233c;
+  --color-highlight: #dfe5eb;
+  --color-on-highlight: #111217;
+  --color-tangerine: #ef233c;
+  --color-mint: #3ccf91;
 
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Native controls (selects, date pickers, scrollbars) follow the dark theme. */
+:root {
+  color-scheme: dark;
 }
 
 body {

@@ -206,7 +206,7 @@ export default function BudgetProjectPage() {
       {transferred && (
         <p role="status" className="text-sm mb-4 rounded-[14px] bg-brand-soft px-4 py-3">
           Listo, los ítems de este presupuesto están en tu billetera.{" "}
-          <Link to="/wallet" className="font-semibold text-brand hover:underline">
+          <Link to="/wallet" className="font-semibold text-accent hover:underline">
             Ver en la billetera
           </Link>
         </p>
@@ -280,7 +280,7 @@ export default function BudgetProjectPage() {
         </Card>
       )}
 
-      <GroupTitle label="Pasivos" count={liabilities.length} dotClass="bg-[#c4c2e0]" />
+      <GroupTitle label="Pasivos" count={liabilities.length} dotClass="bg-mid-gray" />
       {liabilities.length === 0 ? (
         <EmptyGroup text="No hay pasivos en esta planilla." />
       ) : (
@@ -314,10 +314,10 @@ export default function BudgetProjectPage() {
 
 function Stat({ label, value, detail, highlighted }: { label: string; value: string; detail: string; highlighted?: boolean }) {
   return (
-    <div className={`rounded-[18px] px-4 py-3.5 ${highlighted ? "bg-highlight" : "bg-paper border border-hairline"}`}>
-      <div className={`text-xs font-semibold ${highlighted ? "text-ink" : "text-mid-gray"}`}>{label}</div>
+    <div className={`rounded-[18px] px-4 py-3.5 ${highlighted ? "bg-highlight text-on-highlight" : "bg-paper border border-hairline"}`}>
+      <div className={`text-xs font-semibold ${highlighted ? "text-on-highlight" : "text-mid-gray"}`}>{label}</div>
       <div className="font-display text-[26px] font-extrabold tracking-tight tabular-nums mt-0.5">{value}</div>
-      <div className={`text-xs mt-0.5 ${highlighted ? "text-ink" : "text-mid-gray"}`}>{detail}</div>
+      <div className={`text-xs mt-0.5 ${highlighted ? "text-on-highlight" : "text-mid-gray"}`}>{detail}</div>
     </div>
   );
 }
@@ -356,7 +356,7 @@ function HeaderCell({
       scope="col"
       rowSpan={rowSpan}
       colSpan={colSpan}
-      className={`px-3 py-2.5 font-semibold ${center ? "text-center" : ""} ${quote ? "text-brand bg-brand-soft/60" : ""}`}
+      className={`px-3 py-2.5 font-semibold ${center ? "text-center" : ""} ${quote ? "text-accent bg-surface-alt" : ""}`}
     >
       {children}
     </th>
@@ -374,7 +374,7 @@ function ItemRow({
 }) {
   const isAsset = item.type === "Asset";
   const muted = !item.quote && !item.aiQuoteSummary;
-  const quoteCell = `px-3 py-3 bg-brand-soft/25 ${muted ? "text-mid-gray" : ""}`;
+  const quoteCell = `px-3 py-3 bg-surface-alt/60 ${muted ? "text-mid-gray" : ""}`;
 
   return (
     <tr>
@@ -403,7 +403,7 @@ function ItemRow({
           <td className={quoteCell}>
             {item.quote?.bestValue ? (
               <>
-                <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-highlight px-2 py-0.5 text-[11px] font-bold text-ink">
+                <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-white">
                   <Star size={11} className="fill-current" aria-hidden="true" />
                   Mejor opción
                 </span>

@@ -8,18 +8,20 @@ import { useCurrency } from "../context/CurrencyContext";
 import { Card, PageTitle } from "./ui";
 
 // Recharts takes colors as props, so these mirror the theme tokens in index.css.
-const BRAND = "#3b2fd6";
-const BRAND_SOFT = "#c9c5f6";
-const AMBER = "#b7791f";
-const TANGERINE = "#ff6b3d";
-const MINT = "#0e8f62";
-const EMBER = "#d92d20";
-const axisTick = { fill: "#615e8a", fontSize: 11 };
-const gridStroke = "#e2e2f0";
+const BRAND = "#dfe5eb";
+const BRAND_SOFT = "#dfe5eb";
+const AMBER = "#f2b84b";
+const TANGERINE = "#ef233c";
+const MINT = "#3ccf91";
+const EMBER = "#ff6b7d";
+const MUTED = "#9aa3ad";
+const axisTick = { fill: MUTED, fontSize: 11 };
+const gridStroke = "#2c3039";
 const tooltipStyle = {
-  contentStyle: { background: "#ffffff", border: "1px solid #e2e2f0", borderRadius: 12, color: "#1d1a4f" },
-  labelStyle: { color: "#1d1a4f", fontWeight: 600 },
-  itemStyle: { color: "#1d1a4f" },
+  contentStyle: { background: "#1b1d24", border: "1px solid #2c3039", borderRadius: 12, color: "#dfe5eb" },
+  labelStyle: { color: "#dfe5eb", fontWeight: 600 },
+  itemStyle: { color: "#dfe5eb" },
+  cursor: { fill: "rgba(223, 229, 235, 0.06)" },
 };
 
 const compactClp = new Intl.NumberFormat("es-CL", { notation: "compact", maximumFractionDigits: 1 });
@@ -77,7 +79,7 @@ export function PlannedBudgetReports() {
         <Card>
           <p className="text-sm text-mid-gray">
             Todavía no tienes un presupuesto en tu billetera. Abre uno en{" "}
-            <Link to="/" className="font-semibold text-brand hover:underline">
+            <Link to="/" className="font-semibold text-accent hover:underline">
               Inicio
             </Link>{" "}
             y aprieta "Pasar a la billetera" para ver estos gráficos.
@@ -136,7 +138,7 @@ export function PlannedBudgetReports() {
         {quoteData.length === 0 ? (
           <p className="text-sm text-mid-gray py-8 text-center">
             Ningún activo está cotizado todavía. Abre{" "}
-            <Link to={`/presupuestos/${report.projectId}`} className="font-semibold text-brand hover:underline">
+            <Link to={`/presupuestos/${report.projectId}`} className="font-semibold text-accent hover:underline">
               el presupuesto
             </Link>{" "}
             y aprieta "Generar presupuesto actualizado".
@@ -152,12 +154,12 @@ export function PlannedBudgetReports() {
               </div>
               <div className="rounded-[14px] bg-canvas px-4 py-3">
                 <p className="text-xs text-mid-gray">Total según la IA</p>
-                <p className="font-display text-2xl font-extrabold tabular-nums text-brand">{formatMoney(aiTotal)}</p>
+                <p className="font-display text-2xl font-extrabold tabular-nums text-ink">{formatMoney(aiTotal)}</p>
               </div>
             </div>
 
             {doubtfulItems.length > 0 && (
-              <div role="note" className="mb-4 rounded-[14px] border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-ink">
+              <div role="note" className="mb-4 rounded-[14px] border border-warn/50 bg-warn-soft px-4 py-3 text-sm text-ink">
                 <p className="flex items-start gap-2 font-semibold">
                   <TriangleAlert size={16} className="mt-0.5 shrink-0" style={{ color: AMBER }} aria-hidden="true" />
                   {doubtfulItems.length === 1
@@ -178,12 +180,12 @@ export function PlannedBudgetReports() {
                     <span className="font-semibold tabular-nums" style={{ color: TANGERINE }}>
                       {formatMoney(trustedEstimate)}
                     </span>{" "}
-                    · IA <span className="font-semibold tabular-nums text-brand">{formatMoney(trustedAi)}</span>
+                    · IA <span className="font-semibold tabular-nums text-ink">{formatMoney(trustedAi)}</span>
                   </p>
                 )}
                 <p className="mt-2 ml-6 text-xs text-mid-gray">
                   Para corregirla, abre{" "}
-                  <Link to={`/presupuestos/${report.projectId}`} className="font-semibold text-brand hover:underline">
+                  <Link to={`/presupuestos/${report.projectId}`} className="font-semibold text-accent hover:underline">
                     el presupuesto
                   </Link>
                   , ponle un nombre más específico al ítem (por ejemplo, el tamaño o la capacidad) y vuelve a cotizar.
@@ -238,7 +240,7 @@ export function PlannedBudgetReports() {
                 fill={BRAND}
                 radius={[0, 8, 8, 0]}
                 barSize={18}
-                label={{ position: "right", fill: "#615e8a", fontSize: 11, formatter: (v: unknown) => compactClp.format(Number(v)) }}
+                label={{ position: "right", fill: MUTED, fontSize: 11, formatter: (v: unknown) => compactClp.format(Number(v)) }}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -326,7 +328,7 @@ function splitByScale(data: QuoteDatum[]) {
 
 function QuoteBars({ data, formatMoney }: { data: QuoteDatum[]; formatMoney: (n: number) => string }) {
   if (data.length === 0) return null;
-  const valueLabel = { position: "right" as const, fill: "#615e8a", fontSize: 11, formatter: (v: unknown) => compactClp.format(Number(v)) };
+  const valueLabel = { position: "right" as const, fill: MUTED, fontSize: 11, formatter: (v: unknown) => compactClp.format(Number(v)) };
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[30rem]">
@@ -349,7 +351,7 @@ function QuoteBars({ data, formatMoney }: { data: QuoteDatum[]; formatMoney: (n:
                   : [formatMoney(Number(value)), name]
               }
             />
-            <Legend wrapperStyle={{ color: "#615e8a", fontSize: 12 }} />
+            <Legend wrapperStyle={{ color: MUTED, fontSize: 12 }} />
             <Bar dataKey="estimate" name="Tu estimado" fill={TANGERINE} radius={[0, 6, 6, 0]} barSize={14} label={valueLabel} />
             <Bar dataKey="ai" name="Precio IA" fill={BRAND_SOFT} radius={[0, 6, 6, 0]} barSize={14} label={valueLabel} />
           </BarChart>

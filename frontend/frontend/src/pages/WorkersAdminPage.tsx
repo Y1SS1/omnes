@@ -130,7 +130,7 @@ export default function WorkersAdminPage() {
                   ) : (
                     <button
                       onClick={() => setConfirmDeleteId(w.id)}
-                      className="shrink-0 rounded-full p-2 text-mid-gray hover:bg-red-50 hover:text-ember"
+                      className="shrink-0 rounded-full p-2 text-mid-gray hover:bg-danger-soft hover:text-ember"
                       aria-label={`Eliminar a ${w.displayName}`}
                       title="Eliminar trabajador"
                     >

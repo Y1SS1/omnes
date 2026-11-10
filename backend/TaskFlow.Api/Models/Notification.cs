@@ -1,7 +1,8 @@
 namespace TaskFlow.Api.Models;
 
-// In-app stand-in for US-07's push notification (no APNs/Firebase credentials
-// available in this environment - see README for how to wire real push).
+// No longer used: the app dropped in-app notifications (the 90% spending warning
+// now lives on the wallet's "Gastado en el mes" card). The table stays so the
+// existing migrations and data remain valid.
 public class Notification
 {
     public Guid Id { get; set; } = Guid.NewGuid();

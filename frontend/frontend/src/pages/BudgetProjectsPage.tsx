@@ -179,7 +179,7 @@ export default function BudgetProjectsPage() {
               disabled={uploading}
               onChange={(e) => chooseFile(e.target.files?.[0])}
             />
-            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-ink" aria-hidden="true">
+            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-on-highlight" aria-hidden="true">
               <Paperclip size={20} />
             </div>
             {file ? (
@@ -245,7 +245,7 @@ export default function BudgetProjectsPage() {
                     open ? "bg-surface-alt" : ""
                   }`}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-accent" aria-hidden="true">
                     <FileSpreadsheet size={17} />
                   </span>
                   <span className="font-semibold truncate flex-1">{project.name}</span>
@@ -255,7 +255,7 @@ export default function BudgetProjectsPage() {
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`shrink-0 text-mid-gray transition-transform group-hover:text-brand ${open ? "rotate-180 text-brand" : ""}`}
+                    className={`shrink-0 text-mid-gray transition-transform group-hover:text-accent ${open ? "rotate-180 text-accent" : ""}`}
                     aria-hidden="true"
                   />
                 </button>
@@ -272,7 +272,7 @@ export default function BudgetProjectsPage() {
                       onClick={() => navigate(`/presupuestos/${project.id}`)}
                       className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
                     >
-                      <FolderOpen size={16} className="text-brand" aria-hidden="true" />
+                      <FolderOpen size={16} className="text-accent" aria-hidden="true" />
                       Abrir presupuesto
                     </button>
                     <button
@@ -281,7 +281,7 @@ export default function BudgetProjectsPage() {
                       onClick={() => openRename(project)}
                       className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
                     >
-                      <Pencil size={16} className="text-brand" aria-hidden="true" />
+                      <Pencil size={16} className="text-accent" aria-hidden="true" />
                       Cambiar nombre
                     </button>
                     <div className="my-1 border-t border-hairline" />
@@ -290,7 +290,7 @@ export default function BudgetProjectsPage() {
                       role="menuitem"
                       onClick={() => deleteProject(project)}
                       disabled={deletingId !== null}
-                      className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ember hover:bg-red-50 disabled:opacity-50"
+                      className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ember hover:bg-danger-soft disabled:opacity-50"
                     >
                       <Trash2 size={16} aria-hidden="true" />
                       Borrar

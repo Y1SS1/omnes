@@ -61,35 +61,6 @@ public class TransactionsControllerTests
     }
 
     [Fact]
-    public async Task Create_ExpenseCrossing90PercentOfBudget_RaisesNotification()
-    {
-        var (controller, db, userId) = NewController(startingBalance: 10_000m);
-        db.Budgets.Add(new Budget { UserId = userId, Month = new DateOnly(2026, 10, 1), LimitAmount = 1000m });
-        await db.SaveChangesAsync();
-
-        // 85% already spent, this expense pushes it past 90%
-        await controller.Create(new CreateTransactionRequest(
-            850m, TransactionType.Expense, null, null, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc)));
-        await controller.Create(new CreateTransactionRequest(
-            100m, TransactionType.Expense, null, null, new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc)));
-
-        Assert.Single(db.Notifications.Where(n => n.UserId == userId));
-    }
-
-    [Fact]
-    public async Task Create_ExpenseStayingUnder90Percent_DoesNotRaiseNotification()
-    {
-        var (controller, db, userId) = NewController(startingBalance: 10_000m);
-        db.Budgets.Add(new Budget { UserId = userId, Month = new DateOnly(2026, 10, 1), LimitAmount = 1000m });
-        await db.SaveChangesAsync();
-
-        await controller.Create(new CreateTransactionRequest(
-            500m, TransactionType.Expense, null, null, new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc)));
-
-        Assert.Empty(db.Notifications.Where(n => n.UserId == userId));
-    }
-
-    [Fact]
     public async Task Delete_Expense_RefundsWalletBalance()
     {
         var (controller, db, userId) = NewController(startingBalance: 1000m);

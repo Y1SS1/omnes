@@ -37,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-ink px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(99,86,255,0.55),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(255,107,61,0.22),transparent_40%)]">
+    <main className="min-h-screen flex items-center justify-center bg-night px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(239,35,60,0.28),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(223,229,235,0.07),transparent_40%)]">
       <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
@@ -62,11 +62,11 @@ export default function LoginPage() {
         </form>
         <p className="text-sm text-center text-mid-gray mt-4">
           ¿No tienes cuenta?{" "}
-          <Link to="/registro-trabajador" className="text-brand font-semibold hover:underline">
+          <Link to="/registro-trabajador" className="text-accent font-semibold hover:underline">
             Regístrate
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

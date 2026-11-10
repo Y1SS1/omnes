@@ -36,14 +36,14 @@ export default function RegisterWorkerPage() {
 
   if (generatedEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-ink px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(99,86,255,0.55),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(255,107,61,0.22),transparent_40%)]">
+      <main className="min-h-screen flex items-center justify-center bg-night px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(239,35,60,0.28),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(223,229,235,0.07),transparent_40%)]">
         <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8 text-center">
           <div className="flex justify-center mb-2">
             <Logo width={40} height={40} />
           </div>
           <h1 className="font-display text-3xl font-extrabold mb-1 text-ink">¡Cuenta creada!</h1>
           <p className="text-sm text-mid-gray mb-4">Tu correo de acceso a Omnes es:</p>
-          <p className="text-lg font-semibold text-ink bg-highlight rounded-[14px] py-2 px-3 mb-6 break-all">
+          <p className="text-lg font-semibold text-on-highlight bg-highlight rounded-[14px] py-2 px-3 mb-6 break-all">
             {generatedEmail}
           </p>
           <p className="text-xs text-mid-gray mb-6">Guárdalo, lo vas a necesitar para iniciar sesión la próxima vez.</p>
@@ -51,12 +51,12 @@ export default function RegisterWorkerPage() {
             Continuar
           </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-ink px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(99,86,255,0.55),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(255,107,61,0.22),transparent_40%)]">
+    <main className="min-h-screen flex items-center justify-center bg-night px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(239,35,60,0.28),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(223,229,235,0.07),transparent_40%)]">
       <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
@@ -82,9 +82,9 @@ export default function RegisterWorkerPage() {
           </Button>
         </form>
         <p className="text-sm text-center text-mid-gray mt-4">
-          ¿Ya tienes cuenta? <Link to="/login" className="text-brand font-semibold hover:underline">Inicia sesión</Link>
+          ¿Ya tienes cuenta? <Link to="/login" className="text-accent font-semibold hover:underline">Inicia sesión</Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

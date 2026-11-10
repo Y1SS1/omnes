@@ -85,12 +85,6 @@ export interface SavingsMovementDto {
   savingsGoalId: string | null;
 }
 
-export interface NotificationDto {
-  id: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-}
 
 // A budget line copied from an imported Excel into the wallet ("Presupuesto planificado").
 export interface PlannedItemDto {

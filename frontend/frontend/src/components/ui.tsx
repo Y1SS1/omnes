@@ -21,7 +21,7 @@ export function PageTitle({ title, subtitle }: { title: string; subtitle?: strin
 }
 
 export function ProgressBar({ percent, color }: { percent: number; color: "green" | "yellow" | "red" }) {
-  const bg = { green: "bg-mint", yellow: "bg-amber-500", red: "bg-ember" }[color];
+  const bg = { green: "bg-mint", yellow: "bg-warn-soft0", red: "bg-ember" }[color];
   return (
     <div className="w-full h-3 bg-canvas rounded-full overflow-hidden">
       <div
@@ -32,7 +32,8 @@ export function ProgressBar({ percent, color }: { percent: number; color: "green
   );
 }
 
-const AVATAR_COLORS = ["#3B2FD6", "#FF6B3D", "#0E8F62", "#C2410C", "#7C3AED", "#0369A1", "#BE185D", "#4D7C0F"];
+// Dark-theme tones that all keep white initials readable (4.5:1 or more).
+const AVATAR_COLORS = ["#d90429", "#3a3f4a", "#8a1c2b", "#4b5563", "#a3101f", "#2f3540"];
 
 function hashString(input: string): number {
   let hash = 0;
@@ -96,7 +97,7 @@ export function Button({
   const styles = {
     primary: "bg-brand text-white hover:bg-brand-strong",
     secondary: "bg-paper text-ink border border-hairline hover:border-brand/40 hover:bg-brand-soft",
-    danger: "bg-red-50 text-ember hover:bg-red-100",
+    danger: "bg-danger-soft text-ember hover:bg-danger-soft-strong",
     ghost: "text-mid-gray hover:bg-canvas hover:text-ink",
   }[variant];
   return (
@@ -138,7 +139,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-ink/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"

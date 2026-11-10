@@ -19,12 +19,11 @@ Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y comp
 | **Billetera** | Resumen (saldo, fondo de ahorro, gasto del mes con límite y alerta al 90 %, metas), movimientos de ingresos y gastos, y metas de ahorro con cuota mensual. Incluye el **presupuesto planificado**: los ítems del presupuesto en ejecución, editables y comparados con el saldo. |
 | **Reportes** | Tu estimado vs. el precio que encontró la IA (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
 | **Trabajadores** | El administrador crea cuentas de trabajador. Roles: Admin y Trabajador. |
-| **Notificaciones** | Avisos dentro de la app (campana con contador). |
 
 ## Stack
 
 - **Backend:** ASP.NET Core 8 Web API, Entity Framework Core, PostgreSQL (Npgsql) y JWT para autenticación.
-- **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS 4, Recharts, React Router y lucide-react.
+- **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS 4, Recharts, React Router y lucide-react. Tema oscuro: fondo `#111217`, texto `#DFE5EB` y rojo `#EF233C` para lo importante, todos definidos en `frontend/frontend/src/index.css`.
 - **IA:** Microsoft Foundry, modelo `gpt-5-mini` con búsqueda web. La clave solo vive en el backend.
 - **Nube:** Azure App Service (Linux) y Azure Database for PostgreSQL Flexible Server, en la región Chile Central.
 

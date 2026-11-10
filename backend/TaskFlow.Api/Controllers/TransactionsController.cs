@@ -41,7 +41,6 @@ public class TransactionsController : ControllerBase
     }
 
     // US-11 / US-12: register a movement and auto-adjust the wallet balance.
-    // US-16: also raises a near-limit notification when the monthly spend hits 90% of budget.
     [HttpPost]
     public async Task<ActionResult<TransactionDto>> Create(CreateTransactionRequest req)
     {
@@ -68,34 +67,6 @@ public class TransactionsController : ControllerBase
         _db.Transactions.Add(transaction);
 
         wallet.Balance += req.Type == TransactionType.Income ? req.Amount : -req.Amount;
-
-        if (req.Type == TransactionType.Expense)
-        {
-            var monthStart = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var monthEnd = monthStart.AddMonths(1);
-            var budget = await _db.Budgets.FirstOrDefaultAsync(b =>
-                b.UserId == _currentUser.UserId && b.Month == DateOnly.FromDateTime(monthStart));
-
-            if (budget is not null && budget.LimitAmount > 0)
-            {
-                var spentBefore = await _db.Transactions
-                    .Where(t => t.UserId == _currentUser.UserId && t.Type == TransactionType.Expense
-                        && t.Date >= monthStart && t.Date < monthEnd && t.Id != transaction.Id)
-                    .SumAsync(t => t.Amount);
-                var spentAfter = spentBefore + req.Amount;
-                var pctBefore = spentBefore / budget.LimitAmount;
-                var pctAfter = spentAfter / budget.LimitAmount;
-
-                if (pctBefore < 0.9m && pctAfter >= 0.9m)
-                {
-                    _db.Notifications.Add(new Notification
-                    {
-                        UserId = _currentUser.UserId,
-                        Message = "Atención, estás muy cerca de llegar a tu objetivo máximo de gasto este mes"
-                    });
-                }
-            }
-        }
 
         await _db.SaveChangesAsync();
         await _db.Entry(transaction).Reference(t => t.Category).LoadAsync();
