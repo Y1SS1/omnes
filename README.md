@@ -1,96 +1,143 @@
 # Omnes
 
-Organizador de vida y tareas + billetera virtual + métricas, con backend en ASP.NET Core y frontend en React. Implementa las historias de usuario descritas en el documento "Reporte sobre US (User Story)" (3 épicas, 24 historias).
+**Tus finanzas y presupuestos, cotizados con IA.**
+
+Omnes es una aplicación web para armar y ejecutar presupuestos. Subes la planilla Excel de un presupuesto (por ejemplo, para abrir un local) y la IA hace dos cosas:
+- **Clasifica cada ítem** como **activo** (algo que se compra) o **pasivo** (un gasto fijo).
+- **Cotiza los activos en internet,** con el rango de precio, la mejor opción, los proveedores, las fuentes consultadas y la fecha.
+
+Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y compararlo con tu saldo. Los **reportes** muestran cuánto se aleja tu estimado del precio de mercado.
+
+- **URL pública:** https://omnes-api-vyissim.azurewebsites.net
+- **Proyecto:** Taller de Ingeniería de Software, Universidad San Sebastián.
+
+## Funcionalidades
+
+| Módulo | Qué hace |
+|---|---|
+| **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems). La IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza los activos con búsqueda web, de 5 en 5 y con barra de progreso. Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
+| **Billetera** | Resumen (saldo, fondo de ahorro, gasto del mes con límite y alerta al 90 %, metas), movimientos de ingresos y gastos, y metas de ahorro con cuota mensual. Incluye el **presupuesto planificado**: los ítems del presupuesto en ejecución, editables y comparados con el saldo. |
+| **Reportes** | Tu estimado vs. el precio que encontró la IA (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
+| **Trabajadores** | El administrador crea cuentas de trabajador. Roles: Admin y Trabajador. |
+| **Notificaciones** | Avisos dentro de la app (campana con contador). |
 
 ## Stack
 
-- **Backend:** ASP.NET Core 8 Web API, Entity Framework Core, PostgreSQL (Npgsql), JWT para autenticación.
-- **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS, Recharts, React Router.
-- **Base de datos:** PostgreSQL.
+- **Backend:** ASP.NET Core 8 Web API, Entity Framework Core, PostgreSQL (Npgsql) y JWT para autenticación.
+- **Frontend:** React 19 + TypeScript + Vite, Tailwind CSS 4, Recharts, React Router y lucide-react.
+- **IA:** Microsoft Foundry, modelo `gpt-5-mini` con búsqueda web. La clave solo vive en el backend.
+- **Nube:** Azure App Service (Linux) y Azure Database for PostgreSQL Flexible Server, en la región Chile Central.
 
 ## Estructura
 
 ```
-backend/TaskFlow.Api/   API REST (.NET 8)
-frontend/               SPA (React + TS + Vite)
+backend/
+  TaskFlow.Api/          API REST (.NET 8): Controllers, Services, Models, Dtos, Migrations
+  TaskFlow.Api.Tests/    Pruebas unitarias (xUnit)
+  azure-pipelines.yml    Pipeline del backend
+frontend/
+  frontend/              SPA (React + TS + Vite)
+  .husky/                Git hooks (Husky)
+  azure-pipelines.yml    Pipeline del frontend
+deploy-azure.ps1         Despliegue a Azure App Service
 ```
 
 ## Requisitos previos
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Node.js 20+](https://nodejs.org)
-- PostgreSQL 14+ corriendo localmente (o remoto)
+- PostgreSQL 14+ corriendo localmente o en un servidor remoto
 
 ## Backend
 
-1. Crea una base de datos PostgreSQL (por ejemplo `taskflow_dev`).
-2. Si tu base no es la local por defecto, ajusta la cadena de conexión en `backend/TaskFlow.Api/appsettings.Development.json` (`ConnectionStrings:DefaultConnection`). No escribas contraseñas ahí: usa `dotnet user-secrets`.
-3. Configura los secretos locales desde `backend/TaskFlow.Api`. El repositorio no incluye claves, y sin `Jwt:Key` la API no arranca. En producción van como App Settings (`Jwt__Key`, `Foundry__ApiKey`):
+1. **Crea la base de datos** PostgreSQL, por ejemplo `taskflow_dev`.
+2. **Ajusta la conexión si hace falta.** Si tu base no es la local por defecto, cambia la cadena de conexión en `backend/TaskFlow.Api/appsettings.Development.json` (`ConnectionStrings:DefaultConnection`). No escribas contraseñas ahí; usa `dotnet user-secrets`.
+3. **Configura los secretos locales** desde `backend/TaskFlow.Api`. El repositorio no incluye claves y, sin `Jwt:Key`, la API no arranca. En producción van como App Settings (`Jwt__Key`, `Foundry__ApiKey`).
 
    ```bash
    dotnet user-secrets set "Jwt:Key" "una-clave-propia-de-al-menos-32-caracteres"
    dotnet user-secrets set "Foundry:ApiKey" "la-key-de-microsoft-foundry"
    ```
 
-4. Ejecuta:
+4. **Ejecuta la API:**
+
+   ```bash
+   cd backend/TaskFlow.Api
+   dotnet run
+   ```
+
+La API queda en `http://localhost:5146`, con Swagger en `/swagger`. Las migraciones se aplican solas al iniciar (`db.Database.Migrate()` en `Program.cs`).
+
+**Pruebas:**
 
 ```bash
-cd backend/TaskFlow.Api
-dotnet ef database update   # aplica las migraciones (crea las tablas)
-dotnet run
+cd backend
+dotnet test TaskFlow.Api.Tests
 ```
-
-La API queda disponible en `http://localhost:5146` (Swagger en `/swagger`). Las migraciones también se aplican automáticamente al iniciar la app (`db.Database.Migrate()` en `Program.cs`).
 
 ## Frontend
 
 ```bash
-cd frontend
+cd frontend/frontend
 npm install
 npm run dev
 ```
 
-Por defecto apunta a `http://localhost:5146/api` (ver `frontend/.env`, variable `VITE_API_URL`). Abre `http://localhost:5173`.
+Por defecto apunta a `http://localhost:5146/api` (variable `VITE_API_URL` en `frontend/frontend/.env`). Abre `http://localhost:5173`.
 
-## Cobertura de historias de usuario
+## Historias de usuario
+
+Se gestionan en **Azure Boards** (proyecto *taller ing software*).
 
 | Épica | Feature | Historias | Estado |
 |---|---|---|---|
-| 1. Organizador de vida y tareas | Clasificador y plazos | US-01, US-02 | ✅ |
-| | Hábitos repetitivos | US-03, US-04, US-05 | ✅ |
-| | Alertas y notificaciones | US-06, US-07 | ✅ (in-app; ver nota abajo) |
-| | Calendario por colores | US-08, US-09 | ✅ |
-| 2. Billetera virtual | Saldo y egresos | US-10 a US-13 | ✅ |
-| | Presupuesto y proyección | US-14 a US-16 | ✅ |
-| | Ahorros y calculadoras | US-17 a US-19 | ✅ |
-| 3. Métricas y reportes | Productividad | US-21, US-22, US-23 | ✅ |
-| | Financiero | US-24, US-25 | ✅ |
+| Presupuestos cotizados con IA | Carga y gestión de presupuestos | US-26 a US-30 | ✅ |
+| | Cotización con IA | US-31 a US-33 | ✅ |
+| Billetera virtual y control financiero | Gestión de saldo y egresos | US-10 a US-13, US-37 | ✅ (bug #45 abierto) |
+| | Presupuesto mensual y alerta | US-14 a US-16 | ✅ |
+| | Ahorros y calculadora de cuota | US-17 a US-19, US-38 | ✅ |
+| | Presupuesto planificado en la billetera | US-34 a US-36 | ✅ |
+| Métricas y reportes visuales | Reportes del presupuesto en ejecución | US-39 a US-41 | ✅ |
 
-### Nota sobre notificaciones push (US-07)
+**Retiradas en la versión actual:** el módulo de tareas, hábitos y calendario (US-01 a US-09) y sus reportes de productividad (US-21 a US-23). También los gráficos de ahorro real vs. planificado (US-24) y de gastos por categoría (US-25), reemplazados por los reportes US-39 a US-41.
 
-El entorno de desarrollo no tiene credenciales de Apple Push Notification service (APNs) ni Firebase, así que US-07 se implementó como **notificación in-app** (campana en el header, con el mismo texto: "No olvides hacer: [tarea] a las [hora] horas"), generada por un `BackgroundService` que revisa recordatorios vencidos cada 30 segundos. Para enviar push reales a iPhone, habría que:
+**Bug abierto:** #45, el saldo de la billetera puede quedar negativo sin aviso al usuario.
 
-1. Registrar la app en Apple Developer y obtener un certificado/token APNs (o usar Firebase Cloud Messaging como intermediario).
-2. Guardar el device token del usuario al iniciar sesión en la app móvil.
-3. En `ReminderNotificationService`, además de crear la `Notification` en base de datos, llamar al servicio de push con ese token.
+## Calidad y seguridad
+
+- **Husky (Git hooks):** cada integrante los tiene activos al correr `npm install`.
+  - `commit-msg`: exige un mensaje de al menos 5 caracteres.
+  - `pre-commit`: corre el linter (oxlint).
+  - `pre-push`: verifica que TypeScript compile.
+  - `post-checkout` y `post-merge`: ejecutan `npm install` si cambió `package-lock.json`.
+- **Pipelines en Azure DevOps:** se ejecutan en cada push a `main` y se muestran como una línea de tiempo por etapas.
+  - **Backend:** "Compilar y probar" (build, pruebas xUnit, cobertura y **SonarCloud**) y luego "Seguridad" (**OWASP ZAP** sobre la app publicada).
+  - **Frontend:** "Compilar" (`npm ci`, revisión de tipos y build) y luego "Calidad" (**Google Lighthouse**).
+  - Cada ejecución deja reportes descargables: cobertura, `ZAPSecurityReport` y `LighthouseReport`.
+- **Seguridad de la API:**
+  - JWT con clave validada al arrancar.
+  - Cada usuario ve solo sus datos.
+  - Cabeceras OWASP: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy y Permissions-Policy.
+  - HSTS activado y la cabecera `Server` oculta.
 
 ## Autenticación
 
-La API es multiusuario: cada cuenta tiene su propia billetera, categorías (con colores por defecto) y tareas. El login devuelve un JWT que el frontend guarda en `localStorage` y envía en el header `Authorization`.
+La API es multiusuario: cada cuenta tiene su propia billetera, categorías, metas y presupuestos. El login devuelve un JWT que el frontend guarda en `localStorage` y envía en el header `Authorization`.
 
-## Azure DevOps
+## Repositorios
 
-Este repositorio está pensado para vivir en Azure DevOps Repos, con un pipeline de compilación (`azure-pipelines.yml` en la raíz) que valida el build del backend y del frontend en cada push.
+- **GitHub** `Y1SS1/omnes` (`main`): el repositorio principal.
+- **Azure DevOps:** `taller-back` contiene la carpeta `backend/` y `taller-front` la carpeta `frontend/`. Cada uno tiene su propio pipeline.
 
 ## Despliegue en Azure
 
-La app vive desplegada como **un solo App Service** que sirve tanto la API como el frontend ya compilado (el backend sirve los archivos estáticos de `wwwroot/`, sin necesidad de CORS entre dos hosts).
+La app se despliega como **un solo App Service** que sirve la API y también el frontend ya compilado, desde `wwwroot/`. Así no hace falta configurar CORS entre dos servidores.
 
 - **URL pública:** https://omnes-api-vyissim.azurewebsites.net
-- **Resource group:** `rg-omnes` (región `chilecentral`)
-- **App Service:** `omnes-api-vyissim` (plan `plan-omnes`, Linux B1)
-- **Base de datos:** `omnes-db-vyissim` (Azure Database for PostgreSQL Flexible Server), base `taskflow`
-- **Configuración** (connection string, `Jwt:Key`, CORS, `ASPNETCORE_ENVIRONMENT=Production`) vive en las App Settings del App Service, no en el repo.
+- **Resource group:** `rg-omnes` (región `chilecentral`).
+- **App Service:** `omnes-api-vyissim` (plan `plan-omnes`, Linux B1).
+- **Base de datos:** `omnes-db-vyissim` (Azure Database for PostgreSQL Flexible Server), base `taskflow`.
+- **Configuración:** la cadena de conexión, `Jwt:Key`, `Foundry:ApiKey`, CORS y `ASPNETCORE_ENVIRONMENT=Production` están en las App Settings del App Service, no en el repositorio.
 
 Para volver a desplegar después de hacer cambios:
 
@@ -98,4 +145,4 @@ Para volver a desplegar después de hacer cambios:
 .\deploy-azure.ps1
 ```
 
-Requiere tener `az login` hecho con la cuenta que tiene acceso al resource group.
+Requiere tener `az login` hecho con la cuenta que tiene acceso al resource group. La página principal no queda guardada en la caché del navegador, así que cada despliegue se ve de inmediato.
