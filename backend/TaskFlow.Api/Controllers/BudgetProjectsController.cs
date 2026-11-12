@@ -138,10 +138,18 @@ public partial class BudgetProjectsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<BudgetProjectSummaryDto>>> List()
     {
+        var userId = _currentUser.UserId;
         var projects = await _db.BudgetProjects
-            .Where(p => p.UserId == _currentUser.UserId)
+            .Where(p => p.UserId == userId)
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => new BudgetProjectSummaryDto(p.Id, p.Name, p.CreatedAt, p.Items.Count))
+            .Select(p => new BudgetProjectSummaryDto(
+                p.Id,
+                p.Name,
+                p.CreatedAt,
+                p.Items.Count,
+                p.Items.Count(i => i.Type == BudgetItemType.Asset),
+                p.Items.Count(i => i.Type == BudgetItemType.Asset && i.AiQuoteSummary != null),
+                _db.PlannedItems.Any(pi => pi.UserId == userId && pi.BudgetProjectId == p.Id)))
             .ToListAsync();
         return Ok(projects);
     }
@@ -235,7 +243,15 @@ public partial class BudgetProjectsController : ControllerBase
 
         project.Name = name;
         await _db.SaveChangesAsync();
-        return Ok(new BudgetProjectSummaryDto(project.Id, project.Name, project.CreatedAt, project.Items.Count));
+        var inWallet = await _db.PlannedItems.AnyAsync(pi => pi.UserId == _currentUser.UserId && pi.BudgetProjectId == project.Id);
+        return Ok(new BudgetProjectSummaryDto(
+            project.Id,
+            project.Name,
+            project.CreatedAt,
+            project.Items.Count,
+            project.Items.Count(i => i.Type == BudgetItemType.Asset),
+            project.Items.Count(i => i.Type == BudgetItemType.Asset && i.AiQuoteSummary != null),
+            inWallet));
     }
 
     // Deletes the project with its items. If the wallet holds this budget, its copy goes too:

@@ -1,34 +1,37 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { TriangleAlert } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import * as reportsApi from "../api/reports";
-import type { AssetQuoteComparison, PlannedBudgetReportDto } from "../api/types";
+import * as budgetProjectsApi from "../api/budgetProjects";
+import type { AssetQuoteComparison, BudgetProjectSummaryDto, PlannedBudgetReportDto } from "../api/types";
 import { useCurrency } from "../context/CurrencyContext";
-import { Card, PageTitle } from "./ui";
+import { Card, Select } from "./ui";
 
 // Recharts takes colors as props, so these mirror the theme tokens in index.css.
-const BRAND = "#dfe5eb";
-const BRAND_SOFT = "#dfe5eb";
-const AMBER = "#f2b84b";
-const TANGERINE = "#ef233c";
-const MINT = "#3ccf91";
-const EMBER = "#ff6b7d";
-const MUTED = "#9aa3ad";
+const BRAND = "#3d3f43";
+const BRAND_SOFT = "#3d3f43";
+const AMBER = "#c27c0e";
+const TANGERINE = "#e56515";
+// Orange as small text on the light ground needs the darker shade to stay readable.
+const TANGERINE_TEXT = "#b34a0a";
+const MINT = "#187a4f";
+const EMBER = "#c62828";
+const MUTED = "#63676b";
 const axisTick = { fill: MUTED, fontSize: 11 };
-const gridStroke = "#2c3039";
+const gridStroke = "#e6e6e4";
 const tooltipStyle = {
-  contentStyle: { background: "#1b1d24", border: "1px solid #2c3039", borderRadius: 12, color: "#dfe5eb" },
-  labelStyle: { color: "#dfe5eb", fontWeight: 600 },
-  itemStyle: { color: "#dfe5eb" },
-  cursor: { fill: "rgba(223, 229, 235, 0.06)" },
+  contentStyle: { background: "#ffffff", border: "1px solid #cdcdcb", borderRadius: 12, color: "#1a1b1d" },
+  labelStyle: { color: "#1a1b1d", fontWeight: 600 },
+  itemStyle: { color: "#1a1b1d" },
+  cursor: { fill: "rgba(26, 27, 29, 0.05)" },
 };
 
 const compactClp = new Intl.NumberFormat("es-CL", { notation: "compact", maximumFractionDigits: 1 });
 
 type Verdict = "below" | "within" | "above";
 
-// Where the user's estimate falls against the market range the AI found.
+// Where the estimate (the Excel's, or the AI draft's) falls against the market range the AI found.
 function verdictOf(item: AssetQuoteComparison): Verdict {
   if (item.estimatedAmount < item.priceMin!) return "below";
   if (item.estimatedAmount > item.priceMax!) return "above";
@@ -36,58 +39,112 @@ function verdictOf(item: AssetQuoteComparison): Verdict {
 }
 
 const VERDICT_TEXT: Record<Verdict, { label: string; color: string }> = {
-  below: { label: "Estimaste de menos", color: EMBER },
+  below: { label: "Estimado bajo el mercado", color: EMBER },
   within: { label: "Dentro del rango", color: MINT },
-  above: { label: "Estimaste de más", color: AMBER },
+  above: { label: "Estimado sobre el mercado", color: AMBER },
 };
 
-// Reports for the budget the wallet is executing ("Presupuesto planificado").
+// Reports for one budget: the one picked in the selector (also reachable as ?presupuesto=<id>
+// from a budget's page), else the one the wallet executes, else the newest quoted one.
 export function PlannedBudgetReports() {
   const { formatMoney } = useCurrency();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const chosenId = searchParams.get("presupuesto");
+  const [projects, setProjects] = useState<BudgetProjectSummaryDto[] | null>(null);
   const [report, setReport] = useState<PlannedBudgetReportDto | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    reportsApi.getPlannedBudget().then(setReport).catch(() => setLoadFailed(true));
+    budgetProjectsApi.getProjects().then(setProjects).catch(() => setProjects([]));
   }, []);
 
+  // Which budget to analyse once the list is known: the chosen one, else the wallet's,
+  // else the newest one with quotes (so a first-time user is not shown an empty page).
+  const fallbackId =
+    projects?.find((p) => p.inWallet)?.id ?? projects?.find((p) => p.quotedCount > 0)?.id ?? projects?.[0]?.id ?? null;
+  const targetId = chosenId ?? fallbackId;
+
+  useEffect(() => {
+    if (!targetId) return;
+    let cancelled = false;
+    reportsApi
+      .getPlannedBudget(targetId)
+      .then((data) => {
+        if (cancelled) return;
+        setReport(data);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadFailed(true);
+      });
+    // A slower answer for a budget the user already switched away from must not win.
+    return () => {
+      cancelled = true;
+    };
+  }, [targetId]);
+
+  const choose = (id: string) => setSearchParams(id ? { presupuesto: id } : {}, { replace: true });
+
   const header = (
-    <PageTitle
-      title="Presupuesto en ejecución"
-      subtitle={
-        report?.projectName
-          ? `Análisis de "${report.projectName}", el presupuesto que tienes en tu billetera.`
-          : "Análisis del presupuesto que tienes en tu billetera."
-      }
-    />
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink">Análisis del presupuesto</h2>
+        {report?.projectId && (
+          <p className="mt-1 text-sm text-mid-gray">
+            {report.inWallet
+              ? "Es el presupuesto que tienes en tu billetera: los montos incluyen tus cambios allá."
+              : "No está en tu billetera: se usan los montos del presupuesto original."}
+          </p>
+        )}
+      </div>
+      {projects && projects.length > 0 && (
+        <div className="w-full sm:w-80">
+          <label htmlFor="report-budget" className="mb-1 block text-xs font-semibold text-mid-gray">
+            Presupuesto a analizar
+          </label>
+          <Select id="report-budget" value={targetId ?? ""} onChange={(e) => choose(e.target.value)}>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {p.inWallet ? " · en tu billetera" : ""}
+                {p.assetCount > 0 && p.quotedCount === 0 ? " · sin cotizar" : ""}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
+    </div>
   );
 
   if (loadFailed) {
     return (
-      <section aria-label="Presupuesto en ejecución" className="mb-10">
+      <section aria-label="Análisis del presupuesto" className="mb-10">
         {header}
         <p className="text-sm text-ember">No se pudieron cargar estos reportes.</p>
       </section>
     );
   }
-  if (!report) return null;
+  if (projects === null) return null;
 
-  if (!report.projectId) {
+  if (!targetId) {
     return (
-      <section aria-label="Presupuesto en ejecución" className="mb-10">
+      <section aria-label="Análisis del presupuesto" className="mb-10">
         {header}
         <Card>
           <p className="text-sm text-mid-gray">
-            Todavía no tienes un presupuesto en tu billetera. Abre uno en{" "}
+            Todavía no tienes presupuestos para analizar. Crea uno en{" "}
             <Link to="/" className="font-semibold text-accent hover:underline">
               Inicio
             </Link>{" "}
-            y aprieta "Pasar a la billetera" para ver estos gráficos.
+            subiendo un Excel o describiéndolo con IA, y cotízalo.
           </p>
         </Card>
       </section>
     );
   }
+
+  // Still loading the chosen budget (or the previous one is on screen while switching).
+  if (!report || report.projectId !== targetId) return null;
 
   const quoted = report.assetQuotes.filter((a) => a.priceMin !== null && a.priceMax !== null);
   const notQuoted = report.assetQuotes.filter((a) => a.priceMin === null || a.priceMax === null);
@@ -126,13 +183,13 @@ export function PlannedBudgetReports() {
   const typeTotal = report.assetsTotal + report.liabilitiesTotal;
 
   return (
-    <section aria-label="Presupuesto en ejecución" className="mb-10">
+    <section aria-label="Análisis del presupuesto" className="mb-10">
       {header}
 
       <Card className="mb-6">
-        <h2 className="text-lg font-extrabold mb-1">Tu estimado vs. el precio que encontró la IA</h2>
+        <h2 className="text-lg font-extrabold mb-1">Monto estimado vs. precio de mercado</h2>
         <p className="text-xs text-mid-gray mb-4">
-          Por cada activo: el monto que pusiste en el Excel al lado del precio que encontró la IA en internet (el promedio de su rango).
+          Por cada activo: el monto estimado del presupuesto (el de tu Excel o el que propuso la IA al crearlo) al lado del precio que encontró la IA en internet (el promedio de su rango).
         </p>
 
         {quoteData.length === 0 ? (
@@ -147,8 +204,8 @@ export function PlannedBudgetReports() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div className="rounded-[14px] bg-canvas px-4 py-3">
-                <p className="text-xs text-mid-gray">Total que estimaste</p>
-                <p className="font-display text-2xl font-extrabold tabular-nums" style={{ color: TANGERINE }}>
+                <p className="text-xs text-mid-gray">Total estimado</p>
+                <p className="font-display text-2xl font-extrabold tabular-nums" style={{ color: TANGERINE_TEXT }}>
                   {formatMoney(estimateTotal)}
                 </p>
               </div>
@@ -169,26 +226,26 @@ export function PlannedBudgetReports() {
                 <ul className="mt-2 ml-6 space-y-1 text-xs">
                   {doubtfulItems.map((d) => (
                     <li key={d.fullName}>
-                      <span className="font-semibold">{d.fullName}:</span> tu estimado {formatMoney(d.estimate)} vs. IA{" "}
+                      <span className="font-semibold">{d.fullName}:</span> estimado {formatMoney(d.estimate)} vs. IA{" "}
                       {formatMoney(d.ai)} ({describeGap(d.estimate, d.ai)}).
                     </li>
                   ))}
                 </ul>
                 {trusted.length > 0 && (
                   <p className="mt-2 ml-6 text-xs">
-                    <span className="font-semibold">Sin ítems dudosos:</span> tú{" "}
-                    <span className="font-semibold tabular-nums" style={{ color: TANGERINE }}>
+                    <span className="font-semibold">Sin ítems dudosos:</span> estimado{" "}
+                    <span className="font-semibold tabular-nums" style={{ color: TANGERINE_TEXT }}>
                       {formatMoney(trustedEstimate)}
                     </span>{" "}
                     · IA <span className="font-semibold tabular-nums text-ink">{formatMoney(trustedAi)}</span>
                   </p>
                 )}
                 <p className="mt-2 ml-6 text-xs text-mid-gray">
-                  Para corregirla, abre{" "}
+                  Revisa sus fuentes en{" "}
                   <Link to={`/presupuestos/${report.projectId}`} className="font-semibold text-accent hover:underline">
                     el presupuesto
                   </Link>
-                  , ponle un nombre más específico al ítem (por ejemplo, el tamaño o la capacidad) y vuelve a cotizar.
+                  . Si el precio no corresponde a lo que necesitas, ajusta el monto de ese ítem en tu billetera.
                 </p>
               </div>
             )}
@@ -352,7 +409,7 @@ function QuoteBars({ data, formatMoney }: { data: QuoteDatum[]; formatMoney: (n:
               }
             />
             <Legend wrapperStyle={{ color: MUTED, fontSize: 12 }} />
-            <Bar dataKey="estimate" name="Tu estimado" fill={TANGERINE} radius={[0, 6, 6, 0]} barSize={14} label={valueLabel} />
+            <Bar dataKey="estimate" name="Monto estimado" fill={TANGERINE} radius={[0, 6, 6, 0]} barSize={14} label={valueLabel} />
             <Bar dataKey="ai" name="Precio IA" fill={BRAND_SOFT} radius={[0, 6, 6, 0]} barSize={14} label={valueLabel} />
           </BarChart>
         </ResponsiveContainer>

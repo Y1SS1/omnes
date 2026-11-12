@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CircleCheck, Download, Sparkles, Star, Wallet, X } from "lucide-react";
+import { ArrowLeft, ChartLine, Check, CircleCheck, Download, Sparkles, Star, Wallet, X } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
 import { Button, Card, PageTitle, ProgressBar, Select } from "../components/ui";
+import { buttonClass } from "../components/buttonClass";
 
 const QUOTES_AT_ONCE = 5;
 const NOT_QUOTABLE = "No se cotiza";
@@ -43,6 +44,8 @@ export default function BudgetProjectPage() {
   const [walletProject, setWalletProject] = useState<{ id: string; name: string } | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [transferred, setTransferred] = useState(false);
+  // How many assets the last "Generar" run quoted, to confirm the result and point to the next step.
+  const [quoteDone, setQuoteDone] = useState<number | null>(null);
 
   // Shown once: drop the flag from the history entry so a reload does not repeat the notice.
   useEffect(() => {
@@ -84,6 +87,8 @@ export default function BudgetProjectPage() {
     let blockedBy: string | null = null;
 
     setError(null);
+    setQuoteDone(null);
+    setCreatedFrom(null);
     setProgress({ done, total });
 
     const worker = async () => {
@@ -114,6 +119,8 @@ export default function BudgetProjectPage() {
       setError(
         `${failed === 1 ? "1 ítem no se pudo cotizar" : `${failed} ítems no se pudieron cotizar`}. Aprieta el botón otra vez para reintentar; lo ya cotizado hoy no se vuelve a cobrar.`
       );
+    } else if (!leftPage.current && total > 0) {
+      setQuoteDone(total);
     }
   };
 
@@ -189,6 +196,11 @@ export default function BudgetProjectPage() {
   const liabilities = project.items.filter((item) => item.type === "Liability");
   const assetCount = assets.length;
   const quotedCount = assets.filter((item) => item.quote || item.aiQuoteSummary).length;
+  const inWallet = walletProject?.id === project.id;
+  // Where the user is in the path: 1 quote the assets, 2 send to the wallet, 3 see the reports.
+  const allQuoted = assetCount === 0 || quotedCount === assetCount;
+  const step: Step = !allQuoted ? 1 : !inWallet ? 2 : 3;
+  const reportsUrl = `/reports?presupuesto=${project.id}`;
   const sum = (items: BudgetItemDto[]) => items.reduce((total, item) => total + item.estimatedAmount, 0);
 
   return (
@@ -198,22 +210,70 @@ export default function BudgetProjectPage() {
         Tus presupuestos
       </Link>
       <div className="flex flex-wrap items-end justify-between gap-3 mt-2">
-        <PageTitle title={project.name} subtitle="Revisa los tipos antes de generar: solo se cotizan los activos." />
+        <PageTitle
+          title={project.name}
+          subtitle={
+            step === 1
+              ? "Revisa los tipos y cotiza: solo se cotizan los activos."
+              : "Cotización lista: pásala a tu billetera para ejecutarla o mira sus reportes."
+          }
+        />
         <div className="flex flex-wrap gap-2 mb-6">
-          <Button onClick={generate} disabled={quoting || changingType || assetCount === 0}>
+          {/* The button of the step the user is on is the primary one. */}
+          <Button
+            variant={step === 1 ? "primary" : "secondary"}
+            onClick={generate}
+            disabled={quoting || changingType || assetCount === 0}
+          >
             <Sparkles size={16} aria-hidden="true" />
             {quoting ? "Generando..." : "Generar presupuesto actualizado"}
           </Button>
+          <Button
+            variant={step === 2 ? "primary" : "secondary"}
+            onClick={sendToWallet}
+            disabled={quoting || transferring || changingType}
+          >
+            <Wallet size={16} aria-hidden="true" />
+            {transferring ? "Pasando..." : inWallet ? "Actualizar en la billetera" : "Pasar a la billetera"}
+          </Button>
+          {quotedCount > 0 && (
+            <Link to={reportsUrl} className={buttonClass(step === 3 ? "primary" : "secondary")}>
+              <ChartLine size={16} aria-hidden="true" />
+              Ver reportes
+            </Link>
+          )}
           <Button variant="secondary" onClick={download} disabled={quoting || downloading}>
             <Download size={16} aria-hidden="true" />
             {downloading ? "Descargando..." : "Descargar Excel"}
           </Button>
-          <Button variant="secondary" onClick={sendToWallet} disabled={quoting || transferring || changingType}>
-            <Wallet size={16} aria-hidden="true" />
-            {transferring ? "Pasando..." : walletProject?.id === project.id ? "Actualizar en la billetera" : "Pasar a la billetera"}
-          </Button>
         </div>
       </div>
+
+      <Steps step={step} />
+
+      {quoteDone !== null && (
+        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
+          <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
+          <p className="flex-1">
+            <span className="font-semibold">
+              Listo: {quoteDone} de {quoteDone} activos cotizados.
+            </span>{" "}
+            {inWallet ? "Ya está en tu billetera: " : "Siguiente paso: pásalo a tu billetera para ejecutarlo, o "}
+            <Link to={reportsUrl} className="font-semibold text-accent hover:underline">
+              mira sus reportes
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setQuoteDone(null)}
+            className="shrink-0 rounded-full p-1 text-mid-gray hover:text-ink"
+            aria-label="Cerrar aviso"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {createdFrom && (
         <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
@@ -236,11 +296,19 @@ export default function BudgetProjectPage() {
       )}
 
       {transferred && (
-        <p role="status" className="text-sm mb-4 rounded-[14px] bg-brand-soft px-4 py-3">
-          Listo, los ítems de este presupuesto están en tu billetera.{" "}
+        <p role="status" className="text-sm mb-4 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3">
+          <span className="font-semibold">Listo, este presupuesto está en tu billetera.</span>{" "}
           <Link to="/wallet" className="font-semibold text-accent hover:underline">
             Ver en la billetera
           </Link>
+          {quotedCount > 0 && (
+            <>
+              {" · "}
+              <Link to={reportsUrl} className="font-semibold text-accent hover:underline">
+                Ver reportes
+              </Link>
+            </>
+          )}
         </p>
       )}
 
@@ -455,5 +523,46 @@ function ItemRow({
         <td className="px-3 py-3 text-mid-gray">{NOT_QUOTABLE}: solo se clasifica.</td>
       )}
     </tr>
+  );
+}
+
+type Step = 1 | 2 | 3;
+
+const STEPS: { label: string; hint: string }[] = [
+  { label: "Cotizar los activos", hint: 'Aprieta "Generar presupuesto actualizado": la IA busca el precio de cada activo en internet.' },
+  { label: "Pasar a la billetera", hint: "Llévalo a tu billetera para ejecutarlo y compararlo con tu saldo." },
+  { label: "Ver reportes", hint: "Compara tus montos estimados con los precios que encontró la IA." },
+];
+
+// The path of a budget, so the user always sees what is done and what comes next.
+function Steps({ step }: { step: Step }) {
+  return (
+    <nav aria-label="Pasos del presupuesto" className="mb-5 rounded-[18px] border border-hairline bg-paper px-4 py-3">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
+        {STEPS.map((s, index) => {
+          const number = (index + 1) as Step;
+          const done = number < step;
+          const current = number === step;
+          return (
+            <li key={s.label} className="flex items-center gap-2" aria-current={current ? "step" : undefined}>
+              {index > 0 && <span className="h-px w-6 bg-hairline sm:w-10" aria-hidden="true" />}
+              <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                  done ? "bg-mint/20 text-mint" : current ? "bg-brand text-on-brand" : "bg-canvas text-mid-gray"
+                }`}
+                aria-hidden="true"
+              >
+                {done ? <Check size={14} /> : number}
+              </span>
+              <span className={current ? "font-semibold text-ink" : done ? "text-mid-gray line-through decoration-mid-gray/40" : "text-mid-gray"}>
+                {s.label}
+                {done && <span className="sr-only"> (hecho)</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-2 text-xs text-mid-gray">{STEPS[step - 1].hint}</p>
+    </nav>
   );
 }

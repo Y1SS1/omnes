@@ -8,6 +8,9 @@ public class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
+
+    // No longer used by the app (the personal-finance wallet, savings and notifications were
+    // dropped on 12-11-2026): the tables stay so the existing migrations and data remain valid.
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
@@ -16,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<SavingsPlan> SavingsPlans => Set<SavingsPlan>();
     public DbSet<SavingsGoal> SavingsGoals => Set<SavingsGoal>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
     public DbSet<BudgetProject> BudgetProjects => Set<BudgetProject>();
     public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
     public DbSet<PlannedItem> PlannedItems => Set<PlannedItem>();

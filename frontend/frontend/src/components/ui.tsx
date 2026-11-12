@@ -1,9 +1,10 @@
 import { forwardRef, useEffect, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { buttonClass } from "./buttonClass";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`bg-paper rounded-[20px] border border-hairline shadow-[0_1px_2px_rgba(29,26,79,0.06)] p-4 sm:p-5 ${className}`}>
+    <div className={`bg-paper rounded-[20px] border border-hairline shadow-[0_1px_2px_rgba(26,27,29,0.06)] p-4 sm:p-5 ${className}`}>
       {children}
     </div>
   );
@@ -32,8 +33,8 @@ export function ProgressBar({ percent, color }: { percent: number; color: "green
   );
 }
 
-// Dark-theme tones that all keep white initials readable (4.5:1 or more).
-const AVATAR_COLORS = ["#d90429", "#3a3f4a", "#8a1c2b", "#4b5563", "#a3101f", "#2f3540"];
+// Tones that all keep white initials readable (4.5:1 or more).
+const AVATAR_COLORS = ["#b34a0a", "#3d3f43", "#8a3a0a", "#4b5563", "#9a4209", "#2f3540"];
 
 function hashString(input: string): number {
   let hash = 0;
@@ -61,24 +62,6 @@ export function Avatar({ name, id, size = 32, className = "" }: { name: string; 
   );
 }
 
-export function ColorDot({ color }: { color: string }) {
-  return <span className="inline-block h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
-}
-
-export function CategoryLegend({ categories }: { categories: { id: string; name: string; color: string }[] }) {
-  if (categories.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-4 text-xs text-mid-gray">
-      {categories.map((c) => (
-        <span key={c.id} className="flex items-center gap-1.5">
-          <ColorDot color={c.color} />
-          {c.name}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 export function Button({
   children,
   onClick,
@@ -94,23 +77,13 @@ export function Button({
   disabled?: boolean;
   className?: string;
 }) {
-  const styles = {
-    primary: "bg-brand text-white hover:bg-brand-strong",
-    secondary: "bg-paper text-ink border border-hairline hover:border-brand/40 hover:bg-brand-soft",
-    danger: "bg-danger-soft text-ember hover:bg-danger-soft-strong",
-    ghost: "text-mid-gray hover:bg-canvas hover:text-ink",
-  }[variant];
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50 disabled:cursor-not-allowed ${styles} ${className}`}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} className={`${buttonClass(variant)} ${className}`}>
       {children}
     </button>
   );
 }
+
 
 // Shared look for text fields and selects; width is left to each caller.
 export const fieldClass =

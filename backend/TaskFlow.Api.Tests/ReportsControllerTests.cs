@@ -94,4 +94,47 @@ public class ReportsControllerTests
 
         Assert.Null(dto.ProjectId);
     }
+
+    [Fact]
+    public async Task PlannedBudget_ForABudgetOutsideTheWallet_UsesItsOwnItems()
+    {
+        var (controller, db, userId) = NewController();
+        AddPlannedBudget(db, userId);
+        var other = new BudgetProject { UserId = userId, Name = "Cafetería" };
+        other.Items.Add(new BudgetItem { Name = "Cafetera", Category = "Equipos", Type = BudgetItemType.Asset, EstimatedAmount = 300_000m });
+        other.Items.Add(new BudgetItem { Name = "Luz", Category = "Servicios", Type = BudgetItemType.Liability, EstimatedAmount = 100_000m });
+        db.BudgetProjects.Add(other);
+        db.SaveChanges();
+
+        var dto = (await controller.PlannedBudget(other.Id)).Value!;
+
+        Assert.Equal(other.Id, dto.ProjectId);
+        Assert.False(dto.InWallet);
+        Assert.Equal(300_000m, dto.AssetsTotal);
+        Assert.Equal(100_000m, dto.LiabilitiesTotal);
+        Assert.Equal("Cafetera", Assert.Single(dto.AssetQuotes).Name);
+    }
+
+    [Fact]
+    public async Task PlannedBudget_ByDefault_IsTheWalletBudget()
+    {
+        var (controller, db, userId) = NewController();
+        var project = AddPlannedBudget(db, userId);
+
+        var dto = (await controller.PlannedBudget()).Value!;
+
+        Assert.Equal(project.Id, dto.ProjectId);
+        Assert.True(dto.InWallet);
+    }
+
+    [Fact]
+    public async Task PlannedBudget_OfAnotherUsersBudget_ReturnsNotFound()
+    {
+        var (controller, db, _) = NewController();
+        var foreign = AddPlannedBudget(db, Guid.NewGuid());
+
+        var result = await controller.PlannedBudget(foreign.Id);
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
 }

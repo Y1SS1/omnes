@@ -2,11 +2,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { FileSpreadsheet, Pencil, Trash2 } from "lucide-react";
 import * as plannedItemsApi from "../api/plannedItems";
+import * as reportsApi from "../api/reports";
 import { apiErrorMessage } from "../api/budgetProjects";
-import type { BudgetItemType, PlannedItemDto } from "../api/types";
+import type { BudgetItemType, PlannedBudgetReportDto, PlannedItemDto } from "../api/types";
 import { useCurrency } from "../context/CurrencyContext";
 import { MoneyField } from "./money";
-import { Button, Card, Input, Modal, PageTitle, Select } from "./ui";
+import { Button, Card, Input, Modal, Select } from "./ui";
 
 const TYPE_LABEL: Record<BudgetItemType, string> = { Asset: "Activo", Liability: "Pasivo" };
 
@@ -25,9 +26,9 @@ function groupByProject(items: PlannedItemDto[]): ProjectGroup[] {
 const total = (items: PlannedItemDto[], type?: BudgetItemType) =>
   items.filter((i) => type === undefined || i.type === type).reduce((sum, i) => sum + i.amount, 0);
 
-// The wallet's "Presupuesto planificado": the items of the one Excel sent here from its budget
-// page, editable. It is planned money, so it is compared with the balance but never moves it.
-export function PlannedBudget({ balance }: { balance: number | null }) {
+// The wallet's "Presupuesto planificado": the items of the one budget sent here from its page,
+// editable without touching the original, and compared with the market prices the AI quoted.
+export function PlannedBudget() {
   const { formatMoney } = useCurrency();
   const [items, setItems] = useState<PlannedItemDto[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -40,8 +41,12 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // The market side of the comparison: the AI's quotes for this budget's assets.
+  const [market, setMarket] = useState<PlannedBudgetReportDto | null>(null);
+
   useEffect(() => {
     plannedItemsApi.getPlannedItems().then(setItems).catch(() => setLoadFailed(true));
+    reportsApi.getPlannedBudget().then(setMarket).catch(() => setMarket(null));
   }, []);
 
   const openEditor = (item: PlannedItemDto) => {
@@ -82,15 +87,14 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
 
   const groups = groupByProject(items ?? []);
   const plannedTotal = total(items ?? []);
-  const difference = balance === null ? null : balance - plannedTotal;
+  // Only assets with a price range count, each at the middle of the range, as in Reportes.
+  const quotedAssets = (market?.assetQuotes ?? []).filter((a) => a.priceMin !== null && a.priceMax !== null);
+  const estimatedQuoted = quotedAssets.reduce((sum, a) => sum + a.estimatedAmount, 0);
+  const marketQuoted = quotedAssets.reduce((sum, a) => sum + Math.round((a.priceMin! + a.priceMax!) / 2), 0);
+  const marketGap = marketQuoted - estimatedQuoted;
 
   return (
     <section aria-label="Presupuesto planificado" className="mb-8">
-      <PageTitle
-        title="Presupuesto planificado"
-        subtitle="Los ítems del presupuesto que estás ejecutando. Puedes editarlos aquí sin cambiar el presupuesto original."
-      />
-
       {loadFailed && <p className="text-sm text-ember mb-4">No se pudo cargar tu presupuesto planificado.</p>}
       {error && (
         <p role="alert" className="text-sm text-ember mb-4">
@@ -132,21 +136,38 @@ export function PlannedBudget({ balance }: { balance: number | null }) {
               </p>
               <p className="text-sm tabular-nums text-mid-gray">{formatMoney(total(items!, "Liability"))} en pasivos</p>
             </Card>
-            <Card className={difference !== null && difference < 0 ? "ring-2 ring-ember/30" : ""}>
-              <p className="text-sm text-mid-gray">Comparado con tu saldo</p>
-              {difference === null ? (
+            <Card>
+              <p className="text-sm text-mid-gray">Comparado con el mercado</p>
+              {market === null ? (
                 <p className="text-sm text-mid-gray mt-1">—</p>
-              ) : difference >= 0 ? (
+              ) : quotedAssets.length === 0 ? (
                 <>
-                  <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-mint">Te alcanza</p>
-                  <p className="text-xs text-mid-gray mt-1">Te sobran {formatMoney(difference)}</p>
+                  <p className="font-display text-xl font-extrabold tracking-tight text-ink mt-1">Sin cotizar</p>
+                  <p className="text-xs text-mid-gray mt-1">
+                    <Link to={`/presupuestos/${market.projectId}`} className="font-semibold text-accent hover:underline">
+                      Cotiza el presupuesto
+                    </Link>{" "}
+                    para comparar tus montos con los precios de internet.
+                  </p>
                 </>
               ) : (
                 <>
-                  <p className="font-display text-3xl font-extrabold tracking-tight tabular-nums text-ember">
-                    Faltan {formatMoney(-difference)}
+                  <p className="font-display text-xl font-extrabold tracking-tight tabular-nums text-ink mt-1">
+                    {formatMoney(marketQuoted)} <span className="text-sm font-semibold text-mid-gray">según la IA</span>
                   </p>
-                  <p className="text-xs text-mid-gray mt-1">Tu saldo no cubre todo lo planificado</p>
+                  <p className="text-xs text-mid-gray mt-1">
+                    Estimado {formatMoney(estimatedQuoted)} en {quotedAssets.length}{" "}
+                    {quotedAssets.length === 1 ? "activo cotizado" : "activos cotizados"} ·{" "}
+                    <span className={marketGap > 0 ? "font-semibold text-ember" : "font-semibold text-mint"}>
+                      {marketGap > 0 ? `el mercado está ${formatMoney(marketGap)} más caro` : `el mercado está ${formatMoney(-marketGap)} más barato`}
+                    </span>
+                  </p>
+                  <Link
+                    to={`/reports?presupuesto=${market.projectId}`}
+                    className="mt-1 inline-block text-xs font-semibold text-accent hover:underline"
+                  >
+                    Ver el detalle en Reportes
+                  </Link>
                 </>
               )}
             </Card>

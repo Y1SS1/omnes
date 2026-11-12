@@ -17,7 +17,9 @@ public record BudgetItemDto(
 
 public record BudgetProjectDto(Guid Id, string Name, DateTime CreatedAt, IReadOnlyList<BudgetItemDto> Items);
 
-public record BudgetProjectSummaryDto(Guid Id, string Name, DateTime CreatedAt, int ItemCount);
+// AssetCount/QuotedCount show how far quoting got; InWallet marks the budget the wallet is executing.
+public record BudgetProjectSummaryDto(
+    Guid Id, string Name, DateTime CreatedAt, int ItemCount, int AssetCount, int QuotedCount, bool InWallet);
 
 public record UpdateBudgetItemTypeRequest([property: JsonRequired] BudgetItemType Type);
 

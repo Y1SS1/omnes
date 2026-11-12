@@ -6,7 +6,7 @@ Omnes es una aplicación web para armar y ejecutar presupuestos. Subes la planil
 - **Clasifica cada ítem** como **activo** (algo que se compra) o **pasivo** (un gasto fijo).
 - **Cotiza los activos en internet,** con el rango de precio, la mejor opción, los proveedores, las fuentes consultadas y la fecha.
 
-Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y compararlo con tu saldo. Los **reportes** muestran cuánto se aleja tu estimado del precio de mercado.
+Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y ajustarlo. Los **reportes** muestran cuánto se aleja el monto estimado del precio de mercado. Omnes planifica y cotiza: no maneja dinero real.
 
 - **URL pública:** https://omnes-api-vyissim.azurewebsites.net
 - **Proyecto:** Taller de Ingeniería de Software, Universidad San Sebastián.
@@ -16,8 +16,8 @@ Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y comp
 | Módulo | Qué hace |
 |---|---|
 | **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems) o **describe tu proyecto** ("una pollería pequeña para 20 personas") y la IA arma una lista que revisas y editas antes de guardarla (máximo 10 por día). Con el Excel, la IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza los activos con búsqueda web, de 5 en 5 y con barra de progreso. Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
-| **Billetera** | Resumen (saldo, fondo de ahorro, gasto del mes con límite y alerta al 90 %, metas), movimientos de ingresos y gastos, y metas de ahorro con cuota mensual. Incluye el **presupuesto planificado**: los ítems del presupuesto en ejecución, editables y comparados con el saldo. |
-| **Reportes** | Tu estimado vs. el precio que encontró la IA (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
+| **Billetera** | El **presupuesto planificado**: los ítems del presupuesto en ejecución, editables sin cambiar el original, con su total, activos y pasivos, y la comparación con el precio de mercado que encontró la IA. |
+| **Reportes** | Para cualquier presupuesto: monto estimado vs. precio de mercado (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
 | **Trabajadores** | El administrador crea cuentas de trabajador. Roles: Admin y Trabajador. |
 
 ## Stack
@@ -92,15 +92,13 @@ Se gestionan en **Azure Boards** (proyecto *taller ing software*).
 |---|---|---|---|
 | Presupuestos cotizados con IA | Carga y gestión de presupuestos | US-26 a US-30 | ✅ |
 | | Cotización con IA | US-31 a US-33 | ✅ |
-| Billetera virtual y control financiero | Gestión de saldo y egresos | US-10 a US-13, US-37 | ✅ (bug #45 abierto) |
-| | Presupuesto mensual y alerta | US-14 a US-16 | ✅ |
-| | Ahorros y calculadora de cuota | US-17 a US-19, US-38 | ✅ |
-| | Presupuesto planificado en la billetera | US-34 a US-36 | ✅ |
+| Billetera | Presupuesto planificado en la billetera | US-34 a US-36 | ✅ |
 | Métricas y reportes visuales | Reportes del presupuesto en ejecución | US-39 a US-41 | ✅ |
 
-**Retiradas en la versión actual:** el módulo de tareas, hábitos y calendario (US-01 a US-09) y sus reportes de productividad (US-21 a US-23). También los gráficos de ahorro real vs. planificado (US-24) y de gastos por categoría (US-25), reemplazados por los reportes US-39 a US-41.
-
-**Bug abierto:** #45, el saldo de la billetera puede quedar negativo sin aviso al usuario.
+**Retiradas en la versión actual:**
+- El módulo de tareas, hábitos y calendario (US-01 a US-09) y sus reportes de productividad (US-21 a US-23).
+- Las finanzas personales de la billetera: saldo y movimientos (US-10 a US-13), límite de gasto mensual con alerta (US-14 a US-16), ahorros y metas (US-17 a US-19), el resumen de la billetera (US-37) y la devolución de ahorros (US-38). Omnes no maneja dinero real, así que la billetera quedó solo con el presupuesto en ejecución.
+- Los gráficos de ahorro real vs. planificado (US-24) y de gastos por categoría (US-25), reemplazados por los reportes US-39 a US-41.
 
 ## Calidad y seguridad
 
@@ -111,7 +109,7 @@ Se gestionan en **Azure Boards** (proyecto *taller ing software*).
   - `post-checkout` y `post-merge`: ejecutan `npm install` si cambió `package-lock.json`.
 - **Pipelines en Azure DevOps:** se ejecutan en cada push a `main` y se muestran como una línea de tiempo por etapas.
   - **Backend:** "Compilar y probar" (build, pruebas xUnit, cobertura y **SonarCloud**) y luego "Seguridad" (**OWASP ZAP** sobre la app publicada).
-  - **Frontend:** "Compilar" (`npm ci`, revisión de tipos y build) y luego "Calidad" (**Google Lighthouse**).
+  - **Frontend:** "Compilar" (`npm ci`, revisión de tipos y build) y luego "Calidad" (**Google Lighthouse**, con Lighthouse CI en versión fija e instalado sin scripts de instalación).
   - Cada ejecución deja reportes descargables: cobertura, `ZAPSecurityReport` y `LighthouseReport`.
 - **Seguridad de la API:**
   - JWT con clave validada al arrancar.
@@ -121,7 +119,7 @@ Se gestionan en **Azure Boards** (proyecto *taller ing software*).
 
 ## Autenticación
 
-La API es multiusuario: cada cuenta tiene su propia billetera, categorías, metas y presupuestos. El login devuelve un JWT que el frontend guarda en `localStorage` y envía en el header `Authorization`.
+La API es multiusuario: cada cuenta tiene sus propios presupuestos y su propia billetera (el presupuesto en ejecución). El login devuelve un JWT que el frontend guarda en `localStorage` y envía en el header `Authorization`.
 
 ## Repositorios
 

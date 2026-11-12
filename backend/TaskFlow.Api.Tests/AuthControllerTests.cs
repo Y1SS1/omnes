@@ -28,18 +28,6 @@ public class AuthControllerTests
     }
 
     [Fact]
-    public async Task Register_SeedsDefaultWalletAndCategories()
-    {
-        var controller = NewController(out var db);
-
-        await controller.Register(new RegisterRequest("ana@example.com", "Secret123!", "Ana"));
-        var user = db.Users.Single();
-
-        Assert.Single(db.Wallets.Where(w => w.UserId == user.Id));
-        Assert.True(db.Categories.Count(c => c.UserId == user.Id) >= 10);
-    }
-
-    [Fact]
     public async Task Register_WithDuplicateEmail_ReturnsConflict()
     {
         var controller = NewController(out _);

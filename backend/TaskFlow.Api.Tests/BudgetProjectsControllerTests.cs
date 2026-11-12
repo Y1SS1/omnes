@@ -649,4 +649,26 @@ public class BudgetProjectsControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
+
+    [Fact]
+    public async Task List_ReportsQuotingProgressAndWhichBudgetIsInTheWallet()
+    {
+        var (controller, db, userId, _) = NewController();
+        var quoted = new BudgetProject { UserId = userId, Name = "Cotizado" };
+        quoted.Items.Add(new BudgetItem { Name = "Freidora", Category = "Cocina", Type = BudgetItemType.Asset, EstimatedAmount = 1m, AiQuoteSummary = "Rango: $1 - $2." });
+        quoted.Items.Add(new BudgetItem { Name = "Horno", Category = "Cocina", Type = BudgetItemType.Asset, EstimatedAmount = 1m });
+        quoted.Items.Add(new BudgetItem { Name = "Arriendo", Category = "Gastos", Type = BudgetItemType.Liability, EstimatedAmount = 1m });
+        db.BudgetProjects.Add(quoted);
+        db.PlannedItems.Add(new PlannedItem { UserId = userId, BudgetProjectId = quoted.Id, Name = "Freidora", Category = "Cocina", Type = BudgetItemType.Asset, Amount = 1m });
+        db.SaveChanges();
+
+        var list = Assert.IsType<IReadOnlyList<BudgetProjectSummaryDto>>(
+            Assert.IsType<OkObjectResult>((await controller.List()).Result).Value, exactMatch: false);
+
+        var summary = Assert.Single(list);
+        Assert.Equal(3, summary.ItemCount);
+        Assert.Equal(2, summary.AssetCount);
+        Assert.Equal(1, summary.QuotedCount);
+        Assert.True(summary.InWallet);
+    }
 }

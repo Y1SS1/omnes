@@ -108,6 +108,41 @@ public class BudgetDraftsControllerTests
 
         Assert.Equal(StatusCodes.Status429TooManyRequests, Assert.IsType<ObjectResult>(result.Result).StatusCode);
         Assert.Equal(0, drafter.Calls);
+        // The rejected attempt removes its own record, so it does not eat into tomorrow's view either.
+        Assert.Equal(BudgetDraftsController.MaxDraftsPerDay, db.AiUsages.Count(u => u.UserId == userId));
+    }
+
+    [Fact]
+    public async Task Draft_TheLastOfTheDay_IsAllowed()
+    {
+        var (controller, db, userId, drafter) = NewController();
+        for (var i = 0; i < BudgetDraftsController.MaxDraftsPerDay - 1; i++)
+            db.AiUsages.Add(new AiUsage { UserId = userId, Kind = AiUsage.BudgetDraft });
+        db.SaveChanges();
+
+        var result = await controller.Draft(Valid(), CancellationToken.None);
+
+        var dto = Assert.IsType<BudgetDraftDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        Assert.Equal(0, dto.RemainingToday);
+        Assert.Equal(1, drafter.Calls);
+        Assert.Equal(BudgetDraftsController.MaxDraftsPerDay, db.AiUsages.Count(u => u.UserId == userId));
+    }
+
+    [Fact]
+    public async Task Draft_WhenASimultaneousRequestTookTheLastSlot_IsRejectedWithoutCallingTheAi()
+    {
+        // Nine earlier uses plus one from a request running at the same moment, already saved
+        // but not yet answered: this request must not become an eleventh.
+        var (controller, db, userId, drafter) = NewController();
+        for (var i = 0; i < BudgetDraftsController.MaxDraftsPerDay; i++)
+            db.AiUsages.Add(new AiUsage { UserId = userId, Kind = AiUsage.BudgetDraft });
+        db.SaveChanges();
+
+        var result = await controller.Draft(Valid(), CancellationToken.None);
+
+        Assert.Equal(StatusCodes.Status429TooManyRequests, Assert.IsType<ObjectResult>(result.Result).StatusCode);
+        Assert.Equal(0, drafter.Calls);
+        Assert.Equal(BudgetDraftsController.MaxDraftsPerDay, db.AiUsages.Count(u => u.UserId == userId));
     }
 
     [Fact]

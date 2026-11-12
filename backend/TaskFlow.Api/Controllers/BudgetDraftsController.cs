@@ -42,15 +42,23 @@ public class BudgetDraftsController : ControllerBase
             return BadRequest($"El monto aproximado debe estar entre 1 y {MoneyValidation.MaxAmount:N0}.");
 
         // Every call spends AI credit, so the attempt counts even if the AI then fails.
+        // Record first, count after: a request always counts its own row and every row saved
+        // before it, so simultaneous requests can never let more than the limit through (at
+        // worst two racing for the last slot are both turned away, never both let in).
         var userId = _currentUser.UserId;
+        var usage = new AiUsage { UserId = userId, Kind = AiUsage.BudgetDraft };
+        _db.AiUsages.Add(usage);
+        await _db.SaveChangesAsync(cancellationToken);
+
         var usedToday = await _db.AiUsages.CountAsync(u =>
             u.UserId == userId && u.Kind == AiUsage.BudgetDraft && u.CreatedAt >= ChileTime.StartOfTodayUtc(), cancellationToken);
-        if (usedToday >= MaxDraftsPerDay)
+        if (usedToday > MaxDraftsPerDay)
+        {
+            _db.AiUsages.Remove(usage);
+            await _db.SaveChangesAsync(CancellationToken.None);
             return StatusCode(StatusCodes.Status429TooManyRequests,
                 $"Llegaste al máximo de {MaxDraftsPerDay} presupuestos generados con IA por día. Intenta de nuevo mañana.");
-
-        _db.AiUsages.Add(new AiUsage { UserId = userId, Kind = AiUsage.BudgetDraft });
-        await _db.SaveChangesAsync(cancellationToken);
+        }
 
         IReadOnlyList<BudgetDraftItem> items;
         try
@@ -64,6 +72,6 @@ public class BudgetDraftsController : ControllerBase
 
         return Ok(new BudgetDraftDto(
             items.Select(i => new BudgetDraftItemDto(i.Name, i.Category, i.Type, i.EstimatedAmount)).ToList(),
-            MaxDraftsPerDay - usedToday - 1));
+            Math.Max(0, MaxDraftsPerDay - usedToday)));
     }
 }

@@ -60,15 +60,15 @@ export default function Layout() {
 
   const pillClass = (item: NavItem) => ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-      isItemActive(item, isActive) ? "bg-brand text-white" : "text-mid-gray hover:bg-white/10 hover:text-white"
+      isItemActive(item, isActive) ? "bg-brand text-on-brand" : "text-on-night-muted hover:bg-white/10 hover:text-white"
     }`;
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-night text-ink px-4 md:px-6 relative">
+      <header className="bg-night text-on-night px-4 md:px-6 relative">
         <div className="h-16 flex items-center gap-4">
           <Link to="/" aria-label="Omnes, ir al inicio" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <Logo width={28} height={28} core="#dfe5eb" />
+            <Logo width={28} height={28} core="#f8f8f8" side="#f8f8f8" />
             <span className="font-display text-xl font-extrabold tracking-tight hidden sm:inline">Omnes</span>
           </Link>
 
@@ -83,7 +83,7 @@ export default function Layout() {
 
           <button
             onClick={() => setMenuOpen((s) => !s)}
-            className="md:hidden ml-auto rounded-full p-2 text-mid-gray hover:bg-white/10 hover:text-white"
+            className="md:hidden ml-auto rounded-full p-2 text-on-night-muted hover:bg-white/10 hover:text-white"
             aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuOpen}
           >
@@ -109,7 +109,7 @@ export default function Layout() {
                 end={item.end}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold ${
-                    isItemActive(item, isActive) ? "bg-brand text-white" : "text-mid-gray hover:bg-white/10 hover:text-white"
+                    isItemActive(item, isActive) ? "bg-brand text-on-brand" : "text-on-night-muted hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
@@ -118,11 +118,11 @@ export default function Layout() {
               </NavLink>
             ))}
             <div className="flex items-center justify-between px-3 pt-3 mt-2 border-t border-white/15 text-sm">
-              <span className="flex items-center gap-2 text-mid-gray truncate">
+              <span className="flex items-center gap-2 text-on-night-muted truncate">
                 {user && <Avatar name={user.displayName} id={user.userId} size={24} />}
                 {user?.displayName}
               </span>
-              <button onClick={handleLogout} className="text-mid-gray hover:text-white text-xs">
+              <button onClick={handleLogout} className="text-on-night-muted hover:text-white text-xs">
                 Cerrar sesión
               </button>
             </div>

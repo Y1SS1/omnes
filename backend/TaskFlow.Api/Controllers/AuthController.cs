@@ -42,7 +42,6 @@ public class AuthController : ControllerBase
             Role = email == AppConstants.AdminEmail ? UserRole.Admin : UserRole.Trabajador
         };
         _db.Users.Add(user);
-        SeedNewUserData(user.Id);
         await _db.SaveChangesAsync();
 
         var token = _jwt.GenerateToken(user);
@@ -75,7 +74,6 @@ public class AuthController : ControllerBase
             Role = UserRole.Trabajador
         };
         _db.Users.Add(user);
-        SeedNewUserData(user.Id);
         await _db.SaveChangesAsync();
 
         var token = _jwt.GenerateToken(user);
@@ -106,27 +104,5 @@ public class AuthController : ControllerBase
                 sb.Append(char.ToLowerInvariant(c));
         }
         return sb.ToString();
-    }
-
-    private void SeedNewUserData(Guid userId)
-    {
-        _db.Wallets.Add(new Wallet { UserId = userId, Balance = 0, SavingsFund = 0 });
-
-        _db.Categories.AddRange(
-            new Category { UserId = userId, Name = "Trámites", Color = "#3B82F6", Type = CategoryType.Task },
-            new Category { UserId = userId, Name = "Personal", Color = "#8B5CF6", Type = CategoryType.Task },
-            new Category { UserId = userId, Name = "Salud", Color = "#EF4444", Type = CategoryType.Task },
-            new Category { UserId = userId, Name = "Estudio", Color = "#F59E0B", Type = CategoryType.Task },
-            new Category { UserId = userId, Name = "Supermercado", Color = "#10B981", Type = CategoryType.Expense },
-            new Category { UserId = userId, Name = "Transporte", Color = "#3B82F6", Type = CategoryType.Expense },
-            new Category { UserId = userId, Name = "Ropa", Color = "#EC4899", Type = CategoryType.Expense },
-            new Category { UserId = userId, Name = "Entretenimiento", Color = "#8B5CF6", Type = CategoryType.Expense },
-            new Category { UserId = userId, Name = "Otros", Color = "#6B7280", Type = CategoryType.Expense },
-            new Category { UserId = userId, Name = "Sueldo", Color = "#10B981", Type = CategoryType.Income },
-            new Category { UserId = userId, Name = "Regalo", Color = "#F59E0B", Type = CategoryType.Income },
-            new Category { UserId = userId, Name = "Reembolso", Color = "#3B82F6", Type = CategoryType.Income },
-            new Category { UserId = userId, Name = "Venta", Color = "#8B5CF6", Type = CategoryType.Income },
-            new Category { UserId = userId, Name = "Otros ingresos", Color = "#6B7280", Type = CategoryType.Income }
-        );
     }
 }

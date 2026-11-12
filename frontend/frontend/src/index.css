@@ -1,40 +1,45 @@
 @import "tailwindcss";
 
-/* Dark theme: near-black ground (#111217), light blue-grey text (#DFE5EB) and a
-   red (#EF233C) reserved for what matters most. Where white text sits on red the
-   red is a shade darker (#D90429) so it keeps a 4.5:1 contrast; red used as text
-   on the dark ground is a lighter shade (#FF5C70) for the same reason. */
+/* Light theme "Clockwork": near-white ground (#F8F8F8), white cards, grey borders
+   (#CDCDCB) and orange (#E56515) for what matters most. The top bar stays dark
+   (#1A1B1D) so the orange of the active tab stands out. White text on that orange
+   is under 4.5:1, so text on orange is dark (on-brand); orange used as text on the
+   light ground is a darker shade (#B34A0A), and the palette's grey (#919599) is
+   darkened to #63676B for small text, both for the same reason. */
 @theme {
-  --color-canvas: #111217;
-  --color-paper: #1b1d24;
-  --color-surface-alt: #22252d;
-  --color-night: #0a0b0e;
-  --color-ink: #dfe5eb;
-  --color-ink-soft: #c5ccd4;
-  --color-mid-gray: #9aa3ad;
-  --color-hairline: #2c3039;
-  --color-ember: #ff6b7d;
-  --color-danger-soft: #3a1418;
-  --color-danger-soft-strong: #4d1a21;
-  --color-warn: #f2b84b;
-  --color-warn-soft: #2b2416;
-  --color-brand: #d90429;
-  --color-brand-strong: #b8031f;
-  --color-brand-soft: #3a141a;
-  --color-accent: #ff5c70;
-  --color-signal: #ef233c;
-  --color-highlight: #dfe5eb;
-  --color-on-highlight: #111217;
-  --color-tangerine: #ef233c;
-  --color-mint: #3ccf91;
+  --color-canvas: #f8f8f8;
+  --color-paper: #ffffff;
+  --color-surface-alt: #efefee;
+  --color-night: #1a1b1d;
+  --color-on-night: #f8f8f8;
+  --color-on-night-muted: #a9adb1;
+  --color-ink: #1a1b1d;
+  --color-ink-soft: #3d3f43;
+  --color-mid-gray: #63676b;
+  --color-hairline: #cdcdcb;
+  --color-ember: #c62828;
+  --color-danger-soft: #fdecec;
+  --color-danger-soft-strong: #f9d4d4;
+  --color-warn: #9a5b00;
+  --color-warn-soft: #fff4e0;
+  --color-brand: #e56515;
+  --color-brand-strong: #cc5810;
+  --color-brand-soft: #fde6d2;
+  --color-on-brand: #1a1b1d;
+  --color-accent: #b34a0a;
+  --color-signal: #e56515;
+  --color-highlight: #1a1b1d;
+  --color-on-highlight: #f8f8f8;
+  --color-tangerine: #e56515;
+  --color-mint: #187a4f;
 
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Native controls (selects, date pickers, scrollbars) follow the dark theme. */
+/* Native controls (selects, date pickers, scrollbars) follow the light theme. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {

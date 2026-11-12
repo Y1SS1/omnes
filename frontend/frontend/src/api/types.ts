@@ -1,38 +1,3 @@
-export type CategoryType = "Task" | "Expense" | "Income";
-export type TransactionType = "Expense" | "Income";
-
-export interface Category {
-  id: string;
-  name: string;
-  color: string;
-  type: CategoryType;
-}
-
-export interface WalletDto {
-  balance: number;
-  savingsFund: number;
-}
-
-export interface TransactionDto {
-  id: string;
-  amount: number;
-  type: TransactionType;
-  categoryId: string | null;
-  categoryName: string | null;
-  categoryColor: string | null;
-  description: string | null;
-  date: string;
-}
-
-export interface BudgetProgressDto {
-  year: number;
-  month: number;
-  limitAmount: number;
-  spent: number;
-  percentUsed: number;
-  color: "green" | "yellow" | "red";
-}
-
 export type BudgetItemType = "Asset" | "Liability";
 
 export interface BudgetQuoteBlocks {
@@ -65,26 +30,11 @@ export interface BudgetProjectSummaryDto {
   name: string;
   createdAt: string;
   itemCount: number;
+  // How far quoting got (quotedCount of assetCount) and whether the wallet executes this budget.
+  assetCount: number;
+  quotedCount: number;
+  inWallet: boolean;
 }
-
-export interface SavingsGoalDto {
-  id: string;
-  name: string;
-  targetAmount: number;
-  targetMonths: number;
-  monthlyQuota: number;
-  savedAmount: number;
-  createdAt: string;
-}
-
-export interface SavingsMovementDto {
-  id: string;
-  amount: number;
-  date: string;
-  note: string | null;
-  savingsGoalId: string | null;
-}
-
 
 // A budget line copied from an imported Excel into the wallet ("Presupuesto planificado").
 export interface PlannedItemDto {
@@ -123,6 +73,8 @@ export interface AssetQuoteComparison {
 export interface PlannedBudgetReportDto {
   projectId: string | null;
   projectName: string | null;
+  // True when the analysed budget is the one in the wallet (its split then uses the wallet's edits).
+  inWallet: boolean;
   assetsTotal: number;
   liabilitiesTotal: number;
   byCategory: PlannedCategorySlice[];
