@@ -101,7 +101,13 @@ stages:
             workingDirectory: frontend/frontend
             displayName: "npm run build"
 
-          - script: npx -y @lhci/cli collect --staticDistDir=dist --numberOfRuns=1
+          # A pinned version, installed without running package scripts: "npx -y" would fetch
+          # whatever is newest and run its install scripts on the agent (SonarCloud flags it).
+          - script: npm install --no-save --ignore-scripts --no-audit --no-fund @lhci/cli@0.15.1
+            workingDirectory: frontend/frontend
+            displayName: "Install Lighthouse CI 0.15.1"
+
+          - script: ./node_modules/.bin/lhci collect --staticDistDir=dist --numberOfRuns=1
             workingDirectory: frontend/frontend
             displayName: "Run Lighthouse audit"
 
