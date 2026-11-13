@@ -121,8 +121,8 @@ stages:
               version: "8.x"
 
           - script: |
-              curl -sSfL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz" -o jmeter.tgz
-              curl -sSfL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz.sha512" -o jmeter.tgz.sha512
+              curl -sSfL --proto "=https" --tlsv1.2 "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz" -o jmeter.tgz
+              curl -sSfL --proto "=https" --tlsv1.2 "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz.sha512" -o jmeter.tgz.sha512
               echo "$(cut -d" " -f1 jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
               tar -xzf jmeter.tgz -C $(Agent.TempDirectory)
             workingDirectory: $(Agent.TempDirectory)
@@ -139,6 +139,8 @@ stages:
               export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=omnes_perf;Username=postgres"
               export ASPNETCORE_ENVIRONMENT=Production
               export ASPNETCORE_URLS=http://127.0.0.1:5000
+              # Logs why a session token is rejected, shown below if the test has errors.
+              export Logging__LogLevel__Microsoft.AspNetCore.Authentication=Information
               dotnet $(Agent.TempDirectory)/api/TaskFlow.Api.dll > $(Agent.TempDirectory)/api.log 2>&1 &
               API_PID=$!
 
@@ -157,12 +159,15 @@ stages:
                 -e -o $(Build.ArtifactStagingDirectory)/jmeter \
                 -Jhost=127.0.0.1 -Jport=5000 -Jusers=50 -Jrampup=10 -Jduration=60
               status=$?
+              echo "--- Últimas líneas del registro de la API ---"
+              grep -v "Executed DbCommand|^      SELECT|^      FROM|^      WHERE" $(Agent.TempDirectory)/api.log | tail -40
               kill $API_PID || true
               exit $status
             displayName: "Prueba de carga: 50 usuarios durante 1 minuto"
 
           # Fails the stage if more than 1 % of requests error or the 95th percentile is over 2 s.
-          - script: python3 performance/check_results.py $(Build.ArtifactStagingDirectory)/jmeter 1 2000
+          - script: python3 $(Build.SourcesDirectory)/performance/check_results.py 1 2000
+            workingDirectory: $(Build.ArtifactStagingDirectory)/jmeter
             displayName: "Revisar límites (errores ≤ 1 %, p95 ≤ 2 s)"
 
           - task: PublishPipelineArtifact@1

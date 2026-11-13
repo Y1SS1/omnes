@@ -1,17 +1,17 @@
 """Reads the JMeter HTML report's statistics and fails when the API is too slow or errors too much.
 
-Usage: python3 check_results.py <report folder> [max error %] [max p95 ms]
+Run it from inside the report folder (it reads ./statistics.json):
+    python3 check_results.py [max error %] [max p95 ms]
 """
 
 import json
 import sys
 from pathlib import Path
 
-report = Path(sys.argv[1])
-max_error_pct = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
-max_p95_ms = float(sys.argv[3]) if len(sys.argv) > 3 else 2000.0
+max_error_pct = float(sys.argv[1]) if len(sys.argv) > 1 else 1.0
+max_p95_ms = float(sys.argv[2]) if len(sys.argv) > 2 else 2000.0
 
-stats = json.loads((report / "statistics.json").read_text(encoding="utf-8"))
+stats = json.loads(Path("statistics.json").read_text(encoding="utf-8"))
 total = stats["Total"]
 error_pct = total["errorPct"]
 # JMeter's report keeps the 90th, 95th and 99th percentiles as pct1, pct2 and pct3.

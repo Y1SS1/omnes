@@ -268,7 +268,7 @@ export default function BudgetProjectPage() {
       }. Lo cotizado hoy no se cobra de nuevo.`,
       confirmLabel: "Actualizar precios",
     });
-    if (ok) generate("all");
+    if (ok) await generate("all");
   };
 
   return (

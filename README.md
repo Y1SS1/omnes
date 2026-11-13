@@ -114,7 +114,7 @@ Se gestionan en **Azure Boards** (proyecto *taller ing software*).
 - **Prueba de carga (Apache JMeter):** el plan está en `backend/performance/omnes.jmx`.
   - Simula **50 usuarios durante 1 minuto** que inician sesión y recorren Inicio, un presupuesto, la Billetera y Reportes. No llama a la IA, para no gastar crédito.
   - En el pipeline corre contra una copia de la API levantada en el mismo agente, con una base PostgreSQL temporal: nunca carga la app real ni deja datos en ella.
-  - La etapa falla si más del 1 % de las peticiones da error o si el percentil 95 supera los 2 segundos (`backend/performance/check_results.py`).
+  - La etapa falla si más del 1 % de las peticiones da error o si el percentil 95 supera los 2 segundos (`backend/performance/check_results.py`, que se corre dentro de la carpeta del reporte).
   - En local: `jmeter -n -t backend/performance/omnes.jmx -l resultados.jtl -e -o reporte -Jport=5146` (parámetros `users`, `rampup`, `duration`).
 - **Seguridad de la API:**
   - JWT con clave validada al arrancar.
