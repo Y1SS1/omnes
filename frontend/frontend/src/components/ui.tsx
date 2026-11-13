@@ -96,10 +96,6 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
   return <input {...props} ref={ref} className={`w-full ${fieldClass} ${props.className ?? ""}`} />;
 });
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`w-full ${fieldClass} ${props.className ?? ""}`} />;
-}
-
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   useEffect(() => {
     if (!open) return;
@@ -112,12 +108,12 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 motion-safe:animate-fade-in" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="bg-paper border border-hairline rounded-[24px] shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+        className="bg-paper border border-hairline rounded-[24px] shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto motion-safe:animate-dialog-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 mb-4">

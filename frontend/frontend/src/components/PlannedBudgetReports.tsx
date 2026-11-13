@@ -6,7 +6,8 @@ import * as reportsApi from "../api/reports";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import type { AssetQuoteComparison, BudgetProjectSummaryDto, PlannedBudgetReportDto } from "../api/types";
 import { useCurrency } from "../context/CurrencyContext";
-import { Card, Select } from "./ui";
+import { Card } from "./ui";
+import { Select } from "./Select";
 
 // Recharts takes colors as props, so these mirror the theme tokens in index.css.
 const BRAND = "#3d3f43";
@@ -102,15 +103,17 @@ export function PlannedBudgetReports() {
           <label htmlFor="report-budget" className="mb-1 block text-xs font-semibold text-mid-gray">
             Presupuesto a analizar
           </label>
-          <Select id="report-budget" value={targetId ?? ""} onChange={(e) => choose(e.target.value)}>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.inWallet ? " · en tu billetera" : ""}
-                {p.assetCount > 0 && p.quotedCount === 0 ? " · sin cotizar" : ""}
-              </option>
-            ))}
-          </Select>
+          <Select
+            id="report-budget"
+            value={targetId ?? ""}
+            onChange={choose}
+            options={projects.map((p) => ({
+              value: p.id,
+              label: `${p.name}${p.inWallet ? " · en tu billetera" : ""}${
+                p.assetCount > 0 && p.quotedCount === 0 ? " · sin cotizar" : ""
+              }`,
+            }))}
+          />
         </div>
       )}
     </div>

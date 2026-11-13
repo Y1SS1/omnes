@@ -7,7 +7,9 @@ import { apiErrorMessage } from "../api/budgetProjects";
 import type { BudgetItemType, PlannedBudgetReportDto, PlannedItemDto } from "../api/types";
 import { useCurrency } from "../context/CurrencyContext";
 import { MoneyField } from "./money";
-import { Button, Card, Input, Modal, Select } from "./ui";
+import { Button, Card, Input, Modal } from "./ui";
+import { Select } from "./Select";
+import { useConfirm } from "./useConfirm";
 
 const TYPE_LABEL: Record<BudgetItemType, string> = { Asset: "Activo", Liability: "Pasivo" };
 
@@ -29,6 +31,7 @@ const total = (items: PlannedItemDto[], type?: BudgetItemType) =>
 // The wallet's "Presupuesto planificado": the items of the one budget sent here from its page,
 // editable without touching the original, and compared with the market prices the AI quoted.
 export function PlannedBudget() {
+  const { confirm, confirmDialog } = useConfirm();
   const { formatMoney } = useCurrency();
   const [items, setItems] = useState<PlannedItemDto[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -75,7 +78,13 @@ export function PlannedBudget() {
   };
 
   const remove = async (item: PlannedItemDto) => {
-    if (!window.confirm(`¿Quitar "${item.name}" de tu presupuesto planificado? El presupuesto original no cambia.`)) return;
+    const ok = await confirm({
+      title: "¿Quitar este ítem?",
+      message: `Se quita "${item.name}" de tu presupuesto planificado. El presupuesto original no cambia.`,
+      confirmLabel: "Quitar",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     try {
       await plannedItemsApi.deletePlannedItem(item.id);
@@ -95,9 +104,10 @@ export function PlannedBudget() {
 
   return (
     <section aria-label="Presupuesto planificado" className="mb-8">
+      {confirmDialog}
       {loadFailed && <p className="text-sm text-ember mb-4">No se pudo cargar tu presupuesto planificado.</p>}
       {error && (
-        <p role="alert" className="text-sm text-ember mb-4">
+        <p role="alert" className="text-sm text-ember mb-4 motion-safe:animate-panel-in">
           {error}
         </p>
       )}
@@ -267,10 +277,15 @@ export function PlannedBudget() {
             <label htmlFor="planned-type" className="block text-sm font-medium mb-1">
               Tipo
             </label>
-            <Select id="planned-type" value={type} onChange={(e) => setType(e.target.value as BudgetItemType)} className="w-full">
-              <option value="Asset">Activo (se compra)</option>
-              <option value="Liability">Pasivo (gasto fijo)</option>
-            </Select>
+            <Select
+              id="planned-type"
+              value={type}
+              onChange={setType}
+              options={[
+                { value: "Asset", label: "Activo (se compra)" },
+                { value: "Liability", label: "Pasivo (gasto fijo)" },
+              ]}
+            />
           </div>
           <div>
             <span className="block text-sm font-medium mb-1">Monto</span>

@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-night px-4 py-10 bg-[radial-gradient(circle_at_15%_10%,rgba(229,101,21,0.28),transparent_45%),radial-gradient(circle_at_90%_95%,rgba(248,248,248,0.07),transparent_40%)]">
-      <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8">
+      <div className="w-full max-w-sm bg-paper rounded-[28px] shadow-2xl p-8 motion-safe:animate-dialog-in">
         <div className="flex justify-center mb-2">
           <Logo width={40} height={40} />
         </div>

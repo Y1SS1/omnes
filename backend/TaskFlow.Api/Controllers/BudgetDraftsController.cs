@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using TaskFlow.Api.Data;
 using TaskFlow.Api.Dtos;
 using TaskFlow.Api.Models;
@@ -41,24 +40,11 @@ public class BudgetDraftsController : ControllerBase
         if (req.TargetAmount is { } target && (target <= 0 || !MoneyValidation.IsWithinRange(target)))
             return BadRequest($"El monto aproximado debe estar entre 1 y {MoneyValidation.MaxAmount:N0}.");
 
-        // Every call spends AI credit, so the attempt counts even if the AI then fails.
-        // Record first, count after: a request always counts its own row and every row saved
-        // before it, so simultaneous requests can never let more than the limit through (at
-        // worst two racing for the last slot are both turned away, never both let in).
-        var userId = _currentUser.UserId;
-        var usage = new AiUsage { UserId = userId, Kind = AiUsage.BudgetDraft };
-        _db.AiUsages.Add(usage);
-        await _db.SaveChangesAsync(cancellationToken);
-
-        var usedToday = await _db.AiUsages.CountAsync(u =>
-            u.UserId == userId && u.Kind == AiUsage.BudgetDraft && u.CreatedAt >= ChileTime.StartOfTodayUtc(), cancellationToken);
-        if (usedToday > MaxDraftsPerDay)
-        {
-            _db.AiUsages.Remove(usage);
-            await _db.SaveChangesAsync(CancellationToken.None);
+        var remaining = await AiDailyLimit.TryUseAsync(
+            _db, _currentUser.UserId, AiUsage.BudgetDraft, MaxDraftsPerDay, cancellationToken);
+        if (remaining is null)
             return StatusCode(StatusCodes.Status429TooManyRequests,
                 $"Llegaste al máximo de {MaxDraftsPerDay} presupuestos generados con IA por día. Intenta de nuevo mañana.");
-        }
 
         IReadOnlyList<BudgetDraftItem> items;
         try
@@ -72,6 +58,6 @@ public class BudgetDraftsController : ControllerBase
 
         return Ok(new BudgetDraftDto(
             items.Select(i => new BudgetDraftItemDto(i.Name, i.Category, i.Type, i.EstimatedAmount)).ToList(),
-            Math.Max(0, MaxDraftsPerDay - usedToday)));
+            remaining.Value));
     }
 }

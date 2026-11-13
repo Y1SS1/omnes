@@ -6,6 +6,7 @@ import type {
   BudgetItemType,
   BudgetProjectDto,
   BudgetProjectSummaryDto,
+  BudgetReviewDto,
 } from "./types";
 
 export async function importProject(name: string, file: File) {
@@ -25,6 +26,18 @@ export async function draftBudget(description: string, targetAmount: number | nu
 // Saves a budget from a list the user reviewed (an AI draft, edited).
 export async function createProject(name: string, items: BudgetDraftItemDto[]) {
   const { data } = await api.post<BudgetProjectDto>("/budget-projects", { name, items });
+  return data;
+}
+
+// "¿Qué me falta?": the AI suggests what the budget needs for the goal. Nothing is saved.
+export async function reviewProject(projectId: string, goal: string) {
+  const { data } = await api.post<BudgetReviewDto>(`/budget-projects/${projectId}/review`, { goal });
+  return data;
+}
+
+// Adds the suggestions the user picked (also to the wallet, if it holds this budget).
+export async function addItems(projectId: string, items: BudgetDraftItemDto[]) {
+  const { data } = await api.post<BudgetProjectDto>(`/budget-projects/${projectId}/items`, { items });
   return data;
 }
 

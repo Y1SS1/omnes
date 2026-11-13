@@ -6,6 +6,7 @@ import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetProjectSummaryDto } from "../api/types";
 import { Button, Card, Input, Modal, PageTitle } from "../components/ui";
 import { AiBudgetDraft } from "../components/AiBudgetDraft";
+import { useConfirm } from "../components/useConfirm";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -16,6 +17,7 @@ function fileProblem(file: File) {
 }
 
 export default function BudgetProjectsPage() {
+  const { confirm, confirmDialog } = useConfirm();
   const navigate = useNavigate();
   const [projects, setProjects] = useState<BudgetProjectSummaryDto[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -89,10 +91,15 @@ export default function BudgetProjectsPage() {
   const deleteProject = async (project: BudgetProjectSummaryDto) => {
     setMenuFor(null);
     const inWallet = project.id === walletProjectId;
-    const question = inWallet
-      ? `¿Borrar "${project.name}"? Es el presupuesto que tienes en tu billetera, así que también se quitará de ahí. No se puede deshacer.`
-      : `¿Borrar "${project.name}"? No se puede deshacer.`;
-    if (!window.confirm(question)) return;
+    const ok = await confirm({
+      title: "¿Borrar este presupuesto?",
+      message: inWallet
+        ? `Se borra "${project.name}". Es el presupuesto que tienes en tu billetera, así que también se quitará de ahí. No se puede deshacer.`
+        : `Se borra "${project.name}". No se puede deshacer.`,
+      confirmLabel: "Borrar",
+      danger: true,
+    });
+    if (!ok) return;
     setDeletingId(project.id);
     setListError(null);
     try {
@@ -144,6 +151,7 @@ export default function BudgetProjectsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {confirmDialog}
       <PageTitle title="Presupuestos" subtitle="Sube tu planilla o describe tu proyecto, y la IA arma y cotiza tu presupuesto." />
 
       {/* Wide screens: create on the left, history on the right, so both fit on one screen.
@@ -180,7 +188,7 @@ export default function BudgetProjectsPage() {
           {mode === "ai" ? (
             <AiBudgetDraft />
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 motion-safe:animate-fade-in">
               <div>
                 <label htmlFor="budget-name" className="block text-sm font-medium mb-1">
                   Nombre del presupuesto
@@ -245,7 +253,7 @@ export default function BudgetProjectsPage() {
               </div>
 
               {error && (
-                <p role="alert" className="text-sm text-ember whitespace-pre-line">
+                <p role="alert" className="text-sm text-ember whitespace-pre-line motion-safe:animate-panel-in">
                   {error}
                 </p>
               )}
@@ -267,7 +275,7 @@ export default function BudgetProjectsPage() {
           {loadFailed && <p className="text-sm text-ember">No se pudieron cargar tus presupuestos.</p>}
           {projects?.length === 0 && <p className="text-sm text-mid-gray">Todavía no has subido ninguna planilla.</p>}
           {listError && (
-            <p role="alert" className="text-sm text-ember mb-2">
+            <p role="alert" className="text-sm text-ember mb-2 motion-safe:animate-panel-in">
               {listError}
             </p>
           )}
@@ -313,7 +321,7 @@ export default function BudgetProjectsPage() {
                     <div
                       role="menu"
                       aria-label={`Opciones de ${project.name}`}
-                      className="absolute right-0 top-full z-20 mt-1 w-56 rounded-[14px] border border-hairline bg-paper p-1.5 shadow-lg"
+                      className="absolute right-0 top-full z-20 mt-1 w-56 rounded-[14px] border border-hairline bg-paper p-1.5 shadow-lg origin-top-right motion-safe:animate-pop-in"
                     >
                       <button
                         type="button"

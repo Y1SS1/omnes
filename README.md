@@ -15,7 +15,7 @@ Después puedes llevar ese presupuesto a tu **billetera** para ejecutarlo y ajus
 
 | Módulo | Qué hace |
 |---|---|
-| **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems) o **describe tu proyecto** ("una pollería pequeña para 20 personas") y la IA arma una lista que revisas y editas antes de guardarla (máximo 10 por día). Con el Excel, la IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza los activos con búsqueda web, de 5 en 5 y con barra de progreso. Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
+| **Inicio: presupuestos con IA** | Sube un Excel (`Nombre \| Categoría \| Monto estimado`, máximo 50 ítems) o **describe tu proyecto** ("una pollería pequeña para 20 personas") y la IA arma una lista que revisas y editas antes de guardarla (máximo 10 por día). Con el Excel, la IA clasifica cada ítem como activo o pasivo, y tú puedes corregirlo. "Generar presupuesto actualizado" cotiza con búsqueda web los activos que aún no tienen precio, de 5 en 5 y con barra de progreso; "Actualizar todos los precios" vuelve a cotizarlos todos. **"¿Qué me falta?"** se abre como una barra de búsqueda: escribes qué quieres lograr ("duplicar la venta de papas y pollos") y la IA recomienda equipos e insumos concretos para eso (el objetivo es obligatorio: vacía, no se envía). Cada sugerencia trae su motivo y eliges cuáles agregar (máximo 10 revisiones por día). Se descarga en Excel. Cada presupuesto se puede abrir, renombrar o borrar. |
 | **Billetera** | El **presupuesto planificado**: los ítems del presupuesto en ejecución, editables sin cambiar el original, con su total, activos y pasivos, y la comparación con el precio de mercado que encontró la IA. |
 | **Reportes** | Para cualquier presupuesto: monto estimado vs. precio de mercado (con aviso de cotizaciones dudosas), presupuesto por categoría y activos vs. pasivos. |
 | **Trabajadores** | El administrador crea cuentas de trabajador. Roles: Admin y Trabajador. |
@@ -108,9 +108,14 @@ Se gestionan en **Azure Boards** (proyecto *taller ing software*).
   - `pre-push`: verifica que TypeScript compile.
   - `post-checkout` y `post-merge`: ejecutan `npm install` si cambió `package-lock.json`.
 - **Pipelines en Azure DevOps:** se ejecutan en cada push a `main` y se muestran como una línea de tiempo por etapas.
-  - **Backend:** "Compilar y probar" (build, pruebas xUnit, cobertura y **SonarCloud**) y luego "Seguridad" (**OWASP ZAP** sobre la app publicada).
+  - **Backend:** "Compilar y probar" (build, pruebas xUnit, cobertura y **SonarCloud**) y luego, en paralelo, "Seguridad" (**OWASP ZAP** sobre la app publicada) y "Rendimiento" (**Apache JMeter**).
   - **Frontend:** "Compilar" (`npm ci`, revisión de tipos y build) y luego "Calidad" (**Google Lighthouse**, con Lighthouse CI en versión fija e instalado sin scripts de instalación).
-  - Cada ejecución deja reportes descargables: cobertura, `ZAPSecurityReport` y `LighthouseReport`.
+  - Cada ejecución deja reportes descargables: cobertura, `ZAPSecurityReport`, `JMeterReport` y `LighthouseReport`.
+- **Prueba de carga (Apache JMeter):** el plan está en `backend/performance/omnes.jmx`.
+  - Simula **50 usuarios durante 1 minuto** que inician sesión y recorren Inicio, un presupuesto, la Billetera y Reportes. No llama a la IA, para no gastar crédito.
+  - En el pipeline corre contra una copia de la API levantada en el mismo agente, con una base PostgreSQL temporal: nunca carga la app real ni deja datos en ella.
+  - La etapa falla si más del 1 % de las peticiones da error o si el percentil 95 supera los 2 segundos (`backend/performance/check_results.py`).
+  - En local: `jmeter -n -t backend/performance/omnes.jmx -l resultados.jtl -e -o reporte -Jport=5146` (parámetros `users`, `rampup`, `duration`).
 - **Seguridad de la API:**
   - JWT con clave validada al arrancar.
   - Cada usuario ve solo sus datos.

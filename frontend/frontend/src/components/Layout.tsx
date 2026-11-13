@@ -101,7 +101,7 @@ export default function Layout() {
 
         {/* Mobile nav menu */}
         {menuOpen && (
-          <div className="md:hidden pb-4 flex flex-col gap-1">
+          <div className="md:hidden pb-4 flex flex-col gap-1 motion-safe:animate-panel-in">
             {items.map((item) => (
               <NavLink
                 key={item.to}
@@ -132,7 +132,7 @@ export default function Layout() {
         {showUserMenu && user && (
           <div
             ref={userMenuPanelRef}
-            className="hidden md:block absolute right-6 top-16 w-64 bg-paper text-ink border border-hairline rounded-[18px] shadow-xl z-20 p-3"
+            className="hidden md:block absolute right-6 top-16 w-64 bg-paper text-ink border border-hairline rounded-[18px] shadow-xl z-20 p-3 origin-top-right motion-safe:animate-pop-in"
           >
             <div className="flex items-center gap-3 pb-3 border-b border-hairline">
               <Avatar name={user.displayName} id={user.userId} size={40} />
@@ -153,7 +153,10 @@ export default function Layout() {
       </header>
 
       <main className="flex-1 p-4 md:p-6 bg-canvas overflow-x-hidden">
-        <Outlet />
+        {/* Keyed by path so each screen plays its entrance; query changes (a filter) do not. */}
+        <div key={location.pathname} className="motion-safe:animate-page-in">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

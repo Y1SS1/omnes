@@ -35,11 +35,103 @@
 
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+
+  /* Motion, always short so the app never feels slow, and always used with motion-safe: so it
+     is skipped when the user asks for reduced motion.
+     - search-open: the "¿Qué me falta?" button stretching into a search bar.
+     - panel-in: anything that unfolds below (suggestions, notices, errors, the mobile menu).
+     - pop-in: dropdown menus, growing from the corner they open from (set origin-top-right).
+     - fade-in / dialog-in: a modal's dark backdrop and its window.
+     - page-in: each screen as the user moves between them. */
+  --animate-search-open: search-open 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-panel-in: panel-in 260ms ease-out;
+  --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-dialog-in: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-page-in: page-in 220ms ease-out;
+  /* A budget row that just changed: its quote arrived, or it was just added. It fades in from
+     a soft orange, so the eye catches what is new without anything jumping. */
+  --animate-quote-in: highlight-in 700ms ease-out;
+  --animate-row-in: highlight-in 900ms ease-out;
+
+  @keyframes highlight-in {
+    from {
+      opacity: 0.25;
+      background-color: var(--color-brand-soft);
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes search-open {
+    from {
+      max-width: 11rem;
+      opacity: 0.7;
+    }
+    to {
+      max-width: 28rem;
+      opacity: 1;
+    }
+  }
+
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 /* Native controls (selects, date pickers, scrollbars) follow the light theme. */
 :root {
   color-scheme: light;
+  /* Always keeps room for the vertical scrollbar, so the header (and the avatar at its right)
+     does not shift sideways between short screens and long ones. */
+  scrollbar-gutter: stable;
 }
 
 body {

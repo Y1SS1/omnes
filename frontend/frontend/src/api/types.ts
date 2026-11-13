@@ -93,3 +93,17 @@ export interface BudgetDraftDto {
   items: BudgetDraftItemDto[];
   remainingToday: number;
 }
+
+// "¿Qué me falta?": what the AI thinks a saved budget is missing; nothing is saved until the user adds it.
+export interface BudgetSuggestionDto {
+  name: string;
+  category: string;
+  type: BudgetItemType;
+  estimatedAmount: number;
+  reason: string;
+}
+
+export interface BudgetReviewDto {
+  suggestions: BudgetSuggestionDto[];
+  remainingToday: number;
+}

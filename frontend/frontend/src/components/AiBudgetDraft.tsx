@@ -5,7 +5,10 @@ import * as budgetProjectsApi from "../api/budgetProjects";
 import type { BudgetItemType } from "../api/types";
 import { useCurrency } from "../context/CurrencyContext";
 import { MoneyField, MoneyInput } from "./money";
-import { Button, Input, Select } from "./ui";
+import { Button, Input } from "./ui";
+import { Select } from "./Select";
+import { ITEM_TYPE_OPTIONS } from "./itemTypeOptions";
+import { useConfirm } from "./useConfirm";
 
 const MAX_DESCRIPTION = 500;
 const MIN_DESCRIPTION = 10;
@@ -16,6 +19,7 @@ type Row = { key: number; name: string; category: string; type: BudgetItemType; 
 // "Describir con IA": the AI proposes the items of a budget from a description, the user
 // edits that list, and only "Crear presupuesto" saves it. No AI runs on save.
 export function AiBudgetDraft() {
+  const { confirm, confirmDialog } = useConfirm();
   const navigate = useNavigate();
   const { formatMoney } = useCurrency();
   const nextKey = useRef(0);
@@ -49,7 +53,15 @@ export function AiBudgetDraft() {
       setError(`Describe tu proyecto con al menos ${MIN_DESCRIPTION} caracteres.`);
       return;
     }
-    if (rows && !window.confirm("Se reemplazará la lista actual, incluidos tus cambios. ¿Generar otra?")) return;
+    if (
+      rows &&
+      !(await confirm({
+        title: "¿Generar otra lista?",
+        message: "Se reemplazará la lista actual, incluidos los cambios que le hiciste.",
+        confirmLabel: "Generar otra",
+      }))
+    )
+      return;
     setGenerating(true);
     setError(null);
     setNotice(null);
@@ -105,7 +117,8 @@ export function AiBudgetDraft() {
   const busy = generating || saving;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 motion-safe:animate-fade-in">
+      {confirmDialog}
       <form onSubmit={generate} className="space-y-4">
         <div>
           <label htmlFor="ai-budget-name" className="block text-sm font-medium mb-1">
@@ -157,7 +170,7 @@ export function AiBudgetDraft() {
       </form>
 
       {generating && (
-        <div role="status" aria-live="polite" className="border-t border-hairline pt-4">
+        <div role="status" aria-live="polite" className="border-t border-hairline pt-4 motion-safe:animate-panel-in">
           <div className="rounded-[14px] border border-hairline bg-surface-alt p-4">
             <p className="flex items-center gap-2 text-sm font-semibold">
               <Sparkles size={16} className="text-accent motion-safe:animate-pulse" aria-hidden="true" />
@@ -175,7 +188,7 @@ export function AiBudgetDraft() {
       {rows && !generating && (
         <section ref={listRef} aria-label="Lista propuesta por la IA" className="border-t border-hairline pt-4 space-y-3 scroll-mt-6">
           {notice && (
-            <p role="status" className="flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
+            <p role="status" className="flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm motion-safe:animate-panel-in">
               <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
               <span>
                 <span className="font-semibold">Listo: la IA propuso {notice.count} ítems por {formatMoney(notice.total)}.</span>{" "}
@@ -223,13 +236,10 @@ export function AiBudgetDraft() {
                 <Select
                   aria-label={`Tipo del ítem ${index + 1}`}
                   value={row.type}
-                  onChange={(e) => update(row.key, { type: e.target.value as BudgetItemType })}
+                  options={ITEM_TYPE_OPTIONS}
+                  onChange={(type) => update(row.key, { type })}
                   disabled={saving}
-                  className="w-full"
-                >
-                  <option value="Asset">Activo</option>
-                  <option value="Liability">Pasivo</option>
-                </Select>
+                />
                 <div aria-label={`Monto del ítem ${index + 1}`} role="group">
                   <MoneyInput value={row.amount} onChange={(amount) => update(row.key, { amount })} placeholder="Monto" />
                 </div>
@@ -267,7 +277,7 @@ export function AiBudgetDraft() {
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-ember whitespace-pre-line">
+        <p role="alert" className="text-sm text-ember whitespace-pre-line motion-safe:animate-panel-in">
           {error}
         </p>
       )}

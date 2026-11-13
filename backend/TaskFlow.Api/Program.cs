@@ -29,6 +29,7 @@ builder.Services.AddHttpClient<FoundryResponsesClient>();
 builder.Services.AddScoped<IBudgetItemClassifier, FoundryBudgetItemClassifier>();
 builder.Services.AddScoped<IBudgetItemQuoter, FoundryBudgetItemQuoter>();
 builder.Services.AddScoped<IBudgetDrafter, FoundryBudgetDrafter>();
+builder.Services.AddScoped<IBudgetReviewer, FoundryBudgetReviewer>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 // Checked here because the JWT options below only run on the first authenticated request.

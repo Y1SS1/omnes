@@ -1,22 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { fieldClass } from "./ui";
+import { Select } from "./Select";
 import { CURRENCIES, formatAmountInput, formatAmountValue, useCurrency, type CurrencyCode } from "../context/CurrencyContext";
 
 export function CurrencySelect({ className = "" }: { className?: string }) {
   const { currency, setCurrency } = useCurrency();
   return (
-    <select
-      value={currency}
-      onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-      title="Moneda"
-      className={`${fieldClass} !px-2 ${className}`}
-    >
-      {Object.values(CURRENCIES).map((c) => (
-        <option key={c.code} value={c.code}>
-          {c.label}
-        </option>
-      ))}
-    </select>
+    // Wrapped so the width set by the caller applies (the dropdown itself fills its box).
+    <div className={className}>
+      <Select
+        aria-label="Moneda"
+        value={currency}
+        onChange={setCurrency}
+        options={Object.values(CURRENCIES).map((c) => ({ value: c.code as CurrencyCode, label: c.label }))}
+        className="!px-2"
+      />
+    </div>
   );
 }
 

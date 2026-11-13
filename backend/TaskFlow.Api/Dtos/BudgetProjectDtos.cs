@@ -40,3 +40,15 @@ public record CreateBudgetItemRequest(
     [property: JsonRequired] decimal EstimatedAmount);
 
 public record CreateBudgetProjectRequest(string? Name, List<CreateBudgetItemRequest>? Items);
+
+// Adds items to a budget that already exists (the "¿Qué me falta?" suggestions the user picked).
+public record AddBudgetItemsRequest(List<CreateBudgetItemRequest>? Items);
+
+// "¿Qué me falta?": the goal the review aims at, e.g. "duplicar la venta de pollos" (required).
+public record ReviewBudgetRequest(string? Goal);
+
+// "¿Qué me falta?": what the AI thinks the budget is missing; nothing is saved yet.
+public record BudgetSuggestionDto(
+    string Name, string Category, BudgetItemType Type, decimal EstimatedAmount, string Reason);
+
+public record BudgetReviewDto(IReadOnlyList<BudgetSuggestionDto> Suggestions, int RemainingToday);

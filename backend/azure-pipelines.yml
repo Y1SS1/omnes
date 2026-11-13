@@ -6,7 +6,18 @@ trigger:
 pool:
   vmImage: "ubuntu-24.04"
 
-# Two stages so the run page shows a timeline: build/test/quality, then security.
+# A throwaway PostgreSQL for the load test: it lives only while that job runs.
+resources:
+  containers:
+    - container: perfdb
+      image: postgres:16
+      env:
+        POSTGRES_DB: omnes_perf
+        POSTGRES_HOST_AUTH_METHOD: trust
+      ports:
+        - 5432:5432
+
+# Stages so the run page shows a timeline: build/test/quality, then security and performance.
 stages:
   - stage: BuildTest
     displayName: "Compilar y probar"
@@ -92,3 +103,72 @@ stages:
               publishLocation: "pipeline"
             condition: always()
             displayName: "Publish OWASP ZAP Security report"
+
+  - stage: Performance
+    displayName: "Rendimiento (Apache JMeter)"
+    dependsOn: BuildTest
+    jobs:
+      - job: JMeter
+        displayName: "Prueba de carga con JMeter"
+        services:
+          perfdb: perfdb
+        variables:
+          JMETER_VERSION: "5.6.3"
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: "sdk"
+              version: "8.x"
+
+          - script: |
+              curl -sSfL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz" -o jmeter.tgz
+              curl -sSfL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$(JMETER_VERSION).tgz.sha512" -o jmeter.tgz.sha512
+              echo "$(cut -d" " -f1 jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
+              tar -xzf jmeter.tgz -C $(Agent.TempDirectory)
+            workingDirectory: $(Agent.TempDirectory)
+            displayName: "Instalar Apache JMeter $(JMETER_VERSION)"
+
+          - script: dotnet publish TaskFlow.Api/TaskFlow.Api.csproj --configuration Release --output $(Agent.TempDirectory)/api
+            displayName: "Publicar la API"
+
+          # The API runs on this agent against the throwaway database, never against the real app:
+          # the load cannot slow down real users or leave test data in production. It starts in
+          # the same step as the test because the agent may stop what a step leaves running.
+          - script: |
+              export Jwt__Key="$(openssl rand -base64 48)"
+              export ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=omnes_perf;Username=postgres"
+              export ASPNETCORE_ENVIRONMENT=Production
+              export ASPNETCORE_URLS=http://127.0.0.1:5000
+              dotnet $(Agent.TempDirectory)/api/TaskFlow.Api.dll > $(Agent.TempDirectory)/api.log 2>&1 &
+              API_PID=$!
+
+              # Ready once it answers (401 without a session is fine); migrations run at startup.
+              ready=false
+              for i in $(seq 1 60); do
+                code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/api/budget-projects || true)
+                if [ "$code" = "401" ]; then ready=true; break; fi
+                sleep 2
+              done
+              if [ "$ready" != true ]; then echo "La API no respondió"; cat $(Agent.TempDirectory)/api.log; exit 1; fi
+
+              $(Agent.TempDirectory)/apache-jmeter-$(JMETER_VERSION)/bin/jmeter -n \
+                -t performance/omnes.jmx \
+                -l $(Agent.TempDirectory)/jmeter-results.jtl \
+                -e -o $(Build.ArtifactStagingDirectory)/jmeter \
+                -Jhost=127.0.0.1 -Jport=5000 -Jusers=50 -Jrampup=10 -Jduration=60
+              status=$?
+              kill $API_PID || true
+              exit $status
+            displayName: "Prueba de carga: 50 usuarios durante 1 minuto"
+
+          # Fails the stage if more than 1 % of requests error or the 95th percentile is over 2 s.
+          - script: python3 performance/check_results.py $(Build.ArtifactStagingDirectory)/jmeter 1 2000
+            displayName: "Revisar límites (errores ≤ 1 %, p95 ≤ 2 s)"
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)/jmeter"
+              artifact: "JMeterReport"
+              publishLocation: "pipeline"
+            condition: always()
+            displayName: "Publicar el reporte de JMeter"

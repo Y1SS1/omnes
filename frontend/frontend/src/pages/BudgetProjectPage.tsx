@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChartLine, Check, CircleCheck, Download, Sparkles, Star, Wallet, X } from "lucide-react";
+import { ArrowLeft, ChartLine, Check, CircleCheck, Download, RefreshCw, Sparkles, Star, Wallet, X } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
-import { Button, Card, PageTitle, ProgressBar, Select } from "../components/ui";
+import { Button, Card, PageTitle, ProgressBar } from "../components/ui";
+import { Select } from "../components/Select";
+import { ITEM_TYPE_OPTIONS } from "../components/itemTypeOptions";
 import { buttonClass } from "../components/buttonClass";
+import { BudgetReviewPanel, type ReviewRun } from "../components/BudgetReviewPanel";
+import { ReviewSearchBar } from "../components/ReviewSearchBar";
+import { useConfirm } from "../components/useConfirm";
 
 const QUOTES_AT_ONCE = 5;
+const MAX_ITEMS = 50;
 const NOT_QUOTABLE = "No se cotiza";
 const NOT_QUOTED_YET = "Sin cotizar";
 
@@ -26,6 +32,7 @@ async function quoteWithRetry(projectId: string, itemId: string) {
 }
 
 export default function BudgetProjectPage() {
+  const { confirm, confirmDialog } = useConfirm();
   const { id = "" } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,6 +53,16 @@ export default function BudgetProjectPage() {
   const [transferred, setTransferred] = useState(false);
   // How many assets the last "Generar" run quoted, to confirm the result and point to the next step.
   const [quoteDone, setQuoteDone] = useState<number | null>(null);
+  // "¿Qué me falta?": the current AI review, and how many of its suggestions were just added.
+  const [review, setReview] = useState<ReviewRun | null>(null);
+  const reviewId = useRef(0);
+  // The search bar the "¿Qué me falta?" button turns into, and what is typed in it.
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [reviewGoal, setReviewGoal] = useState("");
+  const [addedCount, setAddedCount] = useState<number | null>(null);
+  // Rows that changed during this visit, so only they animate (not every row on page load).
+  const [justQuoted, setJustQuoted] = useState<ReadonlySet<string>>(new Set());
+  const [justAdded, setJustAdded] = useState<ReadonlySet<string>>(new Set());
 
   // Shown once: drop the flag from the history entry so a reload does not repeat the notice.
   useEffect(() => {
@@ -78,9 +95,13 @@ export default function BudgetProjectPage() {
     return () => window.removeEventListener("beforeunload", warnBeforeClosing);
   }, [quoting]);
 
-  const generate = async () => {
+  // "missing" quotes only the assets without a price (the usual case, e.g. after adding
+  // suggestions); "all" refreshes every price. Quotes made today are never charged again.
+  const generate = async (scope: "missing" | "all") => {
     if (!project) return;
-    const queue = project.items.filter((item) => item.type === "Asset").map((item) => item.id);
+    const queue = project.items
+      .filter((item) => item.type === "Asset" && (scope === "all" || !(item.quote || item.aiQuoteSummary)))
+      .map((item) => item.id);
     const total = queue.length;
     let done = 0;
     let failed = 0;
@@ -99,6 +120,7 @@ export default function BudgetProjectPage() {
           setProject((current) =>
             current && { ...current, items: current.items.map((item) => (item.id === updated.id ? updated : item)) }
           );
+          setJustQuoted((current) => new Set(current).add(updated.id));
         } catch (err) {
           if ((err as { response?: { status?: number } }).response?.status === 429) {
             blockedBy = budgetProjectsApi.apiErrorMessage(err, "Llegaste al máximo de cotizaciones por hoy.");
@@ -124,6 +146,36 @@ export default function BudgetProjectPage() {
     }
   };
 
+  // Started on submit (not from an effect) so a review is never requested twice.
+  const startReview = async () => {
+    if (!project) return;
+    const runId = ++reviewId.current;
+    const goal = reviewGoal.trim();
+    setReview({ id: runId, goal, loading: true, result: null, error: null });
+    setAddedCount(null);
+    setError(null);
+    try {
+      const result = await budgetProjectsApi.reviewProject(project.id, goal);
+      if (runId === reviewId.current) setReview({ id: runId, goal, loading: false, result, error: null });
+    } catch (err) {
+      if (runId === reviewId.current)
+        setReview({
+          id: runId,
+          goal,
+          loading: false,
+          result: null,
+          error: budgetProjectsApi.apiErrorMessage(err, "No se pudo revisar el presupuesto con IA. Intenta de nuevo."),
+        });
+    }
+  };
+
+  // Closes the bar and its suggestions; a late answer is ignored.
+  const closeReview = () => {
+    reviewId.current++;
+    setReview(null);
+    setSearchOpen(false);
+  };
+
   const changeType = async (item: BudgetItemDto, type: BudgetItemType) => {
     if (!project) return;
     setChangingType(true);
@@ -141,12 +193,16 @@ export default function BudgetProjectPage() {
 
   const sendToWallet = async () => {
     if (!project) return;
-    const question = !walletProject
+    const message = !walletProject
       ? null
       : walletProject.id === project.id
-        ? "Este presupuesto ya está en tu billetera. Si lo vuelves a pasar, se reemplazan sus ítems, incluidos los cambios que hiciste en la billetera. ¿Continuar?"
-        : `Tu billetera tiene el presupuesto "${walletProject.name}". Esto lo reemplaza por "${project.name}". ¿Continuar?`;
-    if (question && !window.confirm(question)) return;
+        ? "Este presupuesto ya está en tu billetera. Si lo vuelves a pasar, se reemplazan sus ítems, incluidos los cambios que hiciste en la billetera."
+        : `Tu billetera tiene el presupuesto "${walletProject.name}". Esto lo reemplaza por "${project.name}".`;
+    if (
+      message &&
+      !(await confirm({ title: "¿Reemplazar lo que hay en tu billetera?", message, confirmLabel: "Reemplazar", danger: true }))
+    )
+      return;
     setTransferring(true);
     setTransferred(false);
     setError(null);
@@ -203,8 +259,21 @@ export default function BudgetProjectPage() {
   const reportsUrl = `/reports?presupuesto=${project.id}`;
   const sum = (items: BudgetItemDto[]) => items.reduce((total, item) => total + item.estimatedAmount, 0);
 
+  // Every asset is searched on the web again, so the cost is spelled out first.
+  const refreshAll = async () => {
+    const ok = await confirm({
+      title: "¿Actualizar todos los precios?",
+      message: `Se vuelven a buscar en internet los precios de ${
+        assetCount === 1 ? "1 activo" : `los ${assetCount} activos`
+      }. Lo cotizado hoy no se cobra de nuevo.`,
+      confirmLabel: "Actualizar precios",
+    });
+    if (ok) generate("all");
+  };
+
   return (
     <div>
+      {confirmDialog}
       <Link to="/" className="inline-flex items-center gap-1 text-xs font-medium text-mid-gray hover:text-ink">
         <ArrowLeft size={14} aria-hidden="true" />
         Tus presupuestos
@@ -220,14 +289,34 @@ export default function BudgetProjectPage() {
         />
         <div className="flex flex-wrap gap-2 mb-6">
           {/* The button of the step the user is on is the primary one. */}
-          <Button
-            variant={step === 1 ? "primary" : "secondary"}
-            onClick={generate}
-            disabled={quoting || changingType || assetCount === 0}
-          >
-            <Sparkles size={16} aria-hidden="true" />
-            {quoting ? "Generando..." : "Generar presupuesto actualizado"}
-          </Button>
+          {allQuoted && quotedCount > 0 ? (
+            <Button variant="secondary" onClick={refreshAll} disabled={quoting || changingType}>
+              <RefreshCw size={16} aria-hidden="true" />
+              {quoting ? "Actualizando..." : "Actualizar todos los precios"}
+            </Button>
+          ) : (
+            <Button
+              variant={step === 1 ? "primary" : "secondary"}
+              onClick={() => generate("missing")}
+              disabled={quoting || changingType || assetCount === 0}
+            >
+              <Sparkles size={16} aria-hidden="true" />
+              {quoting ? "Generando..." : "Generar presupuesto actualizado"}
+            </Button>
+          )}
+          <ReviewSearchBar
+            open={searchOpen}
+            goal={reviewGoal}
+            loading={review?.loading ?? false}
+            disabled={quoting || changingType || project.items.length >= MAX_ITEMS}
+            onOpen={() => {
+              setSearchOpen(true);
+              setAddedCount(null);
+            }}
+            onGoalChange={setReviewGoal}
+            onSubmit={startReview}
+            onClose={closeReview}
+          />
           <Button
             variant={step === 2 ? "primary" : "secondary"}
             onClick={sendToWallet}
@@ -251,12 +340,53 @@ export default function BudgetProjectPage() {
 
       <Steps step={step} />
 
-      {quoteDone !== null && (
-        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
+      {review && (
+        <BudgetReviewPanel
+          key={`${review.id}-${review.loading ? "loading" : "done"}`}
+          run={review}
+          projectId={project.id}
+          inWallet={inWallet}
+          onClose={closeReview}
+          onAdded={(updated, count) => {
+            const before = new Set(project.items.map((item) => item.id));
+            setJustAdded(new Set(updated.items.filter((item) => !before.has(item.id)).map((item) => item.id)));
+            setProject(updated);
+            closeReview();
+            setQuoteDone(null);
+            setAddedCount(count);
+          }}
+        />
+      )}
+
+      {addedCount !== null && (
+        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm motion-safe:animate-panel-in">
           <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
           <p className="flex-1">
             <span className="font-semibold">
-              Listo: {quoteDone} de {quoteDone} activos cotizados.
+              Listo: {addedCount === 1 ? "se agregó 1 ítem" : `se agregaron ${addedCount} ítems`}
+              {inWallet ? ", también en tu billetera" : ""}.
+            </span>{" "}
+            {allQuoted
+              ? "Los pasivos no se cotizan, así que no hay nada más que hacer."
+              : "Los activos nuevos quedan sin cotizar: \"Generar presupuesto actualizado\" cotiza solo esos, sin volver a cobrar lo que ya tiene precio."}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAddedCount(null)}
+            className="shrink-0 rounded-full p-1 text-mid-gray hover:text-ink"
+            aria-label="Cerrar aviso"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {quoteDone !== null && (
+        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm motion-safe:animate-panel-in">
+          <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
+          <p className="flex-1">
+            <span className="font-semibold">
+              Listo: {quoteDone === 1 ? "se cotizó 1 activo" : `se cotizaron ${quoteDone} activos`}; todos los activos tienen precio.
             </span>{" "}
             {inWallet ? "Ya está en tu billetera: " : "Siguiente paso: pásalo a tu billetera para ejecutarlo, o "}
             <Link to={reportsUrl} className="font-semibold text-accent hover:underline">
@@ -276,7 +406,7 @@ export default function BudgetProjectPage() {
       )}
 
       {createdFrom && (
-        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm">
+        <div role="status" className="mb-4 flex items-start gap-2 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 text-sm motion-safe:animate-panel-in">
           <CircleCheck size={18} className="mt-px shrink-0 text-mint" aria-hidden="true" />
           <p className="flex-1">
             <span className="font-semibold">
@@ -296,7 +426,7 @@ export default function BudgetProjectPage() {
       )}
 
       {transferred && (
-        <p role="status" className="text-sm mb-4 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3">
+        <p role="status" className="text-sm mb-4 rounded-[14px] border border-mint/40 bg-mint/10 px-4 py-3 motion-safe:animate-panel-in">
           <span className="font-semibold">Listo, este presupuesto está en tu billetera.</span>{" "}
           <Link to="/wallet" className="font-semibold text-accent hover:underline">
             Ver en la billetera
@@ -328,7 +458,7 @@ export default function BudgetProjectPage() {
       </div>
 
       {progress && (
-        <div className="mb-4" aria-live="polite">
+        <div className="mb-4 motion-safe:animate-panel-in" aria-live="polite">
           <div className="text-sm mb-1">
             Cotizando {progress.done} de {progress.total}. No cierres esta página.
           </div>
@@ -337,7 +467,7 @@ export default function BudgetProjectPage() {
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-ember mb-4">
+        <p role="alert" className="text-sm text-ember mb-4 motion-safe:animate-panel-in">
           {error}
         </p>
       )}
@@ -373,6 +503,8 @@ export default function BudgetProjectPage() {
                   item={item}
                   typeDisabled={quoting || changingType}
                   onTypeChange={(type) => changeType(item, type)}
+                  justQuoted={justQuoted.has(item.id)}
+                  justAdded={justAdded.has(item.id)}
                 />
               ))}
             </tbody>
@@ -402,6 +534,8 @@ export default function BudgetProjectPage() {
                   item={item}
                   typeDisabled={quoting || changingType}
                   onTypeChange={(type) => changeType(item, type)}
+                  justQuoted={justQuoted.has(item.id)}
+                  justAdded={justAdded.has(item.id)}
                 />
               ))}
             </tbody>
@@ -467,30 +601,34 @@ function ItemRow({
   item,
   typeDisabled,
   onTypeChange,
+  justQuoted,
+  justAdded,
 }: {
   item: BudgetItemDto;
   typeDisabled: boolean;
   onTypeChange: (type: BudgetItemType) => void;
+  justQuoted: boolean;
+  justAdded: boolean;
 }) {
   const isAsset = item.type === "Asset";
   const muted = !item.quote && !item.aiQuoteSummary;
-  const quoteCell = `px-3 py-3 bg-surface-alt/60 ${muted ? "text-mid-gray" : ""}`;
+  // A quote that just arrived fades in from soft orange, cell by cell.
+  const arrived = justQuoted ? "motion-safe:animate-quote-in" : "";
+  const quoteCell = `px-3 py-3 bg-surface-alt/60 ${muted ? "text-mid-gray" : ""} ${arrived}`;
 
   return (
-    <tr>
+    <tr className={justAdded ? "motion-safe:animate-row-in" : undefined}>
       <td className="px-3 py-3 font-semibold">{item.name}</td>
       <td className="px-3 py-3">{item.category}</td>
       <td className="px-3 py-2.5 w-28">
         <Select
           aria-label={`Tipo de ${item.name}`}
           value={item.type}
+          options={ITEM_TYPE_OPTIONS}
           disabled={typeDisabled}
-          onChange={(e) => onTypeChange(e.target.value as BudgetItemType)}
-          className="!py-1 !px-2 text-xs disabled:opacity-60"
-        >
-          <option value="Asset">Activo</option>
-          <option value="Liability">Pasivo</option>
-        </Select>
+          onChange={onTypeChange}
+          size="sm"
+        />
       </td>
       <td className="px-3 py-3 whitespace-nowrap tabular-nums">{clp.format(item.estimatedAmount)}</td>
       {isAsset ? (
@@ -503,7 +641,7 @@ function ItemRow({
           <td className={quoteCell}>
             {item.quote?.bestValue ? (
               <>
-                <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-white">
+                <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-on-brand">
                   <Star size={11} className="fill-current" aria-hidden="true" />
                   Mejor opción
                 </span>
@@ -514,8 +652,8 @@ function ItemRow({
             )}
           </td>
           <td className={quoteCell}>{item.quote?.suppliers ?? NOT_QUOTED_YET}</td>
-          <td className="px-3 py-3 text-xs text-mid-gray">{item.quote?.sources}</td>
-          <td className="px-3 py-3 whitespace-nowrap">
+          <td className={`px-3 py-3 text-xs text-mid-gray ${arrived}`}>{item.quote?.sources}</td>
+          <td className={`px-3 py-3 whitespace-nowrap ${arrived}`}>
             {item.aiQuotedAt && new Date(item.aiQuotedAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}
           </td>
         </>
@@ -530,7 +668,7 @@ type Step = 1 | 2 | 3;
 
 const STEPS: { label: string; hint: string }[] = [
   { label: "Cotizar los activos", hint: 'Aprieta "Generar presupuesto actualizado": la IA busca el precio de cada activo en internet.' },
-  { label: "Pasar a la billetera", hint: "Llévalo a tu billetera para ejecutarlo y compararlo con tu saldo." },
+  { label: "Pasar a la billetera", hint: "Llévalo a tu billetera para ejecutarlo y ajustar sus montos." },
   { label: "Ver reportes", hint: "Compara tus montos estimados con los precios que encontró la IA." },
 ];
 
@@ -547,14 +685,18 @@ function Steps({ step }: { step: Step }) {
             <li key={s.label} className="flex items-center gap-2" aria-current={current ? "step" : undefined}>
               {index > 0 && <span className="h-px w-6 bg-hairline sm:w-10" aria-hidden="true" />}
               <span
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300 ${
                   done ? "bg-mint/20 text-mint" : current ? "bg-brand text-on-brand" : "bg-canvas text-mid-gray"
                 }`}
                 aria-hidden="true"
               >
                 {done ? <Check size={14} /> : number}
               </span>
-              <span className={current ? "font-semibold text-ink" : done ? "text-mid-gray line-through decoration-mid-gray/40" : "text-mid-gray"}>
+              <span
+                className={`transition-colors duration-300 ${
+                  current ? "font-semibold text-ink" : done ? "text-mid-gray line-through decoration-mid-gray/40" : "text-mid-gray"
+                }`}
+              >
                 {s.label}
                 {done && <span className="sr-only"> (hecho)</span>}
               </span>
@@ -562,7 +704,10 @@ function Steps({ step }: { step: Step }) {
           );
         })}
       </ol>
-      <p className="mt-2 text-xs text-mid-gray">{STEPS[step - 1].hint}</p>
+      {/* Keyed by step so the hint fades in again when the user moves to the next step. */}
+      <p key={step} className="mt-2 text-xs text-mid-gray motion-safe:animate-fade-in">
+        {STEPS[step - 1].hint}
+      </p>
     </nav>
   );
 }
