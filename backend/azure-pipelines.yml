@@ -141,8 +141,11 @@ stages:
               export ASPNETCORE_URLS=http://127.0.0.1:5000
               # Logs why a session token is rejected, shown below if the test has errors.
               export Logging__LogLevel__Microsoft.AspNetCore.Authentication=Information
-              dotnet $(Agent.TempDirectory)/api/TaskFlow.Api.dll > $(Agent.TempDirectory)/api.log 2>&1 &
+              # Started from its own folder so it finds appsettings.json (JWT issuer and audience).
+              pushd $(Agent.TempDirectory)/api > /dev/null
+              dotnet TaskFlow.Api.dll > $(Agent.TempDirectory)/api.log 2>&1 &
               API_PID=$!
+              popd > /dev/null
 
               # Ready once it answers (401 without a session is fine); migrations run at startup.
               ready=false
