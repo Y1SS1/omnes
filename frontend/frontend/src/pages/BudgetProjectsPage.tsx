@@ -58,7 +58,10 @@ export default function BudgetProjectsPage() {
   }, [menuFor]);
 
   useEffect(() => {
-    budgetProjectsApi.getProjects().then(setProjects).catch(() => setLoadFailed(true));
+    budgetProjectsApi
+      .getProjects()
+      .then(setProjects)
+      .catch(() => setLoadFailed(true));
     plannedItemsApi
       .getPlannedItems()
       .then((items) => setWalletProjectId(items[0]?.budgetProjectId ?? null))
@@ -149,45 +152,145 @@ export default function BudgetProjectsPage() {
     }
   };
 
+  const tabs = (
+    <div role="tablist" aria-label="Cómo crear el presupuesto" className="mb-4 inline-flex rounded-full bg-canvas p-1">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "excel"}
+        onClick={() => setMode("excel")}
+        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+          mode === "excel" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
+        }`}
+      >
+        <FileSpreadsheet size={15} aria-hidden="true" />
+        Subir Excel
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "ai"}
+        onClick={() => setMode("ai")}
+        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+          mode === "ai" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
+        }`}
+      >
+        <Sparkles size={15} aria-hidden="true" />
+        Describir con IA
+      </button>
+    </div>
+  );
+
+  const history = (
+    <Card className="lg:sticky lg:top-6">
+      <h2 className="text-lg font-extrabold mb-2">
+        Tus presupuestos
+        {projects && projects.length > 0 && <span className="ml-2 text-sm font-medium text-mid-gray">{projects.length}</span>}
+      </h2>
+      {loadFailed && <p className="text-sm text-ember">No se pudieron cargar tus presupuestos.</p>}
+      {projects?.length === 0 && <p className="text-sm text-mid-gray">Todavía no has subido ninguna planilla.</p>}
+      {listError && (
+        <p role="alert" className="text-sm text-ember mb-2 motion-safe:animate-panel-in">
+          {listError}
+        </p>
+      )}
+      {/* Its own scroll on wide screens, so a long history never stretches the page. */}
+      <div className="divide-y divide-hairline lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto lg:-mx-2 lg:px-2">
+        {projects?.map((project) => {
+          const open = menuFor === project.id;
+          return (
+            <div key={project.id} className="relative" ref={open ? menuRef : undefined}>
+              <button
+                type="button"
+                onClick={() => setMenuFor(open ? null : project.id)}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className={`group flex w-full items-center gap-3 -mx-2 px-2 py-3 rounded-[14px] text-left text-sm hover:bg-surface-alt ${
+                  open ? "bg-surface-alt" : ""
+                }`}
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-accent"
+                  aria-hidden="true"
+                >
+                  <FileSpreadsheet size={17} />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="font-semibold truncate">{project.name}</span>
+                  <span className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
+                    <QuoteStatus quoted={project.quotedCount} assets={project.assetCount} />
+                    {project.inWallet && <span className="rounded-full bg-highlight px-2 py-0.5 text-on-highlight">En la billetera</span>}
+                  </span>
+                </span>
+                <span className="text-xs text-mid-gray shrink-0">
+                  {project.itemCount} {project.itemCount === 1 ? "ítem" : "ítems"} ·{" "}
+                  {new Date(project.createdAt).toLocaleDateString("es-CL")}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`shrink-0 text-mid-gray transition-transform group-hover:text-accent ${open ? "rotate-180 text-accent" : ""}`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {open && (
+                <div
+                  role="menu"
+                  aria-label={`Opciones de ${project.name}`}
+                  className="absolute right-0 top-full z-20 mt-1 w-56 rounded-[14px] border border-hairline bg-paper p-1.5 shadow-lg origin-top-right motion-safe:animate-pop-in"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => navigate(`/presupuestos/${project.id}`)}
+                    className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
+                  >
+                    <FolderOpen size={16} className="text-accent" aria-hidden="true" />
+                    Abrir presupuesto
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => openRename(project)}
+                    className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
+                  >
+                    <Pencil size={16} className="text-accent" aria-hidden="true" />
+                    Cambiar nombre
+                  </button>
+                  <div className="my-1 border-t border-hairline" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => deleteProject(project)}
+                    disabled={deletingId !== null}
+                    className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ember hover:bg-danger-soft disabled:opacity-50"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                    Borrar
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+
   return (
     <div className="max-w-6xl mx-auto">
       {confirmDialog}
       <PageTitle title="Presupuestos" subtitle="Sube tu planilla o describe tu proyecto, y la IA arma y cotiza tu presupuesto." />
 
       {/* Wide screens: create on the left, history on the right, so both fit on one screen.
-          Narrow screens keep one column, creation first. */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-        <Card>
-          <div role="tablist" aria-label="Cómo crear el presupuesto" className="mb-4 inline-flex rounded-full bg-canvas p-1">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "excel"}
-              onClick={() => setMode("excel")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                mode === "excel" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
-              }`}
-            >
-              <FileSpreadsheet size={15} aria-hidden="true" />
-              Subir Excel
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === "ai"}
-              onClick={() => setMode("ai")}
-              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                mode === "ai" ? "bg-paper text-ink shadow-sm" : "text-mid-gray hover:text-ink"
-              }`}
-            >
-              <Sparkles size={15} aria-hidden="true" />
-              Describir con IA
-            </button>
-          </div>
-
-          {mode === "ai" ? (
-            <AiBudgetDraft />
-          ) : (
+          Narrow screens keep one column, creation first. "Describir con IA" lays out its own
+          columns, because once the AI has a list, that list takes the history's place. */}
+      {mode === "ai" ? (
+        <AiBudgetDraft tabs={tabs} history={history} />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+          <Card>
+            {tabs}
             <form onSubmit={handleSubmit} className="space-y-4 motion-safe:animate-fade-in">
               <div>
                 <label htmlFor="budget-name" className="block text-sm font-medium mb-1">
@@ -223,7 +326,10 @@ export default function BudgetProjectsPage() {
                   disabled={uploading}
                   onChange={(e) => chooseFile(e.target.files?.[0])}
                 />
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-on-highlight" aria-hidden="true">
+                <div
+                  className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-highlight text-on-highlight"
+                  aria-hidden="true"
+                >
                   <Paperclip size={20} />
                 </div>
                 {file ? (
@@ -264,102 +370,11 @@ export default function BudgetProjectsPage() {
                 </Button>
               </div>
             </form>
-          )}
-        </Card>
+          </Card>
 
-        <Card className="lg:sticky lg:top-6">
-          <h2 className="text-lg font-extrabold mb-2">
-            Tus presupuestos
-            {projects && projects.length > 0 && <span className="ml-2 text-sm font-medium text-mid-gray">{projects.length}</span>}
-          </h2>
-          {loadFailed && <p className="text-sm text-ember">No se pudieron cargar tus presupuestos.</p>}
-          {projects?.length === 0 && <p className="text-sm text-mid-gray">Todavía no has subido ninguna planilla.</p>}
-          {listError && (
-            <p role="alert" className="text-sm text-ember mb-2 motion-safe:animate-panel-in">
-              {listError}
-            </p>
-          )}
-          {/* Its own scroll on wide screens, so a long history never stretches the page. */}
-          <div className="divide-y divide-hairline lg:max-h-[calc(100vh-14rem)] lg:overflow-y-auto lg:-mx-2 lg:px-2">
-            {projects?.map((project) => {
-              const open = menuFor === project.id;
-              return (
-                <div key={project.id} className="relative" ref={open ? menuRef : undefined}>
-                  <button
-                    type="button"
-                    onClick={() => setMenuFor(open ? null : project.id)}
-                    aria-haspopup="menu"
-                    aria-expanded={open}
-                    className={`group flex w-full items-center gap-3 -mx-2 px-2 py-3 rounded-[14px] text-left text-sm hover:bg-surface-alt ${
-                      open ? "bg-surface-alt" : ""
-                    }`}
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-accent" aria-hidden="true">
-                      <FileSpreadsheet size={17} />
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="font-semibold truncate">{project.name}</span>
-                      <span className="flex flex-wrap gap-1.5 text-[11px] font-semibold">
-                        <QuoteStatus quoted={project.quotedCount} assets={project.assetCount} />
-                        {project.inWallet && (
-                          <span className="rounded-full bg-highlight px-2 py-0.5 text-on-highlight">En la billetera</span>
-                        )}
-                      </span>
-                    </span>
-                    <span className="text-xs text-mid-gray shrink-0">
-                      {project.itemCount} {project.itemCount === 1 ? "ítem" : "ítems"} ·{" "}
-                      {new Date(project.createdAt).toLocaleDateString("es-CL")}
-                    </span>
-                    <ChevronDown
-                      size={16}
-                      className={`shrink-0 text-mid-gray transition-transform group-hover:text-accent ${open ? "rotate-180 text-accent" : ""}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-
-                  {open && (
-                    <div
-                      role="menu"
-                      aria-label={`Opciones de ${project.name}`}
-                      className="absolute right-0 top-full z-20 mt-1 w-56 rounded-[14px] border border-hairline bg-paper p-1.5 shadow-lg origin-top-right motion-safe:animate-pop-in"
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => navigate(`/presupuestos/${project.id}`)}
-                        className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
-                      >
-                        <FolderOpen size={16} className="text-accent" aria-hidden="true" />
-                        Abrir presupuesto
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => openRename(project)}
-                        className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ink hover:bg-brand-soft"
-                      >
-                        <Pencil size={16} className="text-accent" aria-hidden="true" />
-                        Cambiar nombre
-                      </button>
-                      <div className="my-1 border-t border-hairline" />
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => deleteProject(project)}
-                        disabled={deletingId !== null}
-                        className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium text-ember hover:bg-danger-soft disabled:opacity-50"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                        Borrar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      </div>
+          {history}
+        </div>
+      )}
 
       <Modal open={renaming !== null} onClose={() => setRenaming(null)} title="Cambiar nombre del presupuesto">
         <form onSubmit={saveName} className="space-y-3">
