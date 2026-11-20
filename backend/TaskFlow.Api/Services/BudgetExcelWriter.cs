@@ -99,7 +99,7 @@ public static class BudgetExcelWriter
         else
         {
             WriteQuoteBlocks(sheet, row, blocks.PriceRange, blocks.BestValue, blocks.Suppliers);
-            sheet.Cell(row, 8).Value = blocks.Sources ?? "";
+            WriteSourcesOrLinks(sheet.Cell(row, 8), blocks);
         }
 
         if (item.AiQuotedAt is { } quotedAt)
@@ -108,6 +108,20 @@ public static class BudgetExcelWriter
             date.Value = ChileTime.ToLocal(quotedAt).Date;
             date.Style.DateFormat.Format = "dd-mm-yyyy";
         }
+    }
+
+    // The agreed header stays "Fuentes consultadas": with purchase links it lists them instead, one
+    // "Store: url" line each, and the cell opens the first one.
+    private static void WriteSourcesOrLinks(IXLCell cell, BudgetQuoteBlocks blocks)
+    {
+        if (blocks.BuyLinks is not { Count: > 0 } links)
+        {
+            cell.Value = blocks.Sources ?? "";
+            return;
+        }
+        cell.Value = string.Join("\n", links.Select(l => $"{l.Store}: {l.Url}"));
+        cell.SetHyperlink(new XLHyperlink(links[0].Url));
+        cell.Style.Alignment.WrapText = true;
     }
 
     private static void WriteQuoteBlocks(IXLWorksheet sheet, int row, string priceRange, string bestValue, string suppliers)

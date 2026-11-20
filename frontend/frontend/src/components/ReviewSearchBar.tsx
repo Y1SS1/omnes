@@ -30,6 +30,10 @@ export function ReviewSearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   // Set when Enter is pressed on a too-short goal: shows a hint instead of asking the AI.
   const [nudge, setNudge] = useState(false);
+  // True while the bar folds back into the button; onClose runs once that animation ends.
+  const [closing, setClosing] = useState(false);
+  // Only after a close does the button fade back in, so it does not flash on page load.
+  const [reopenedButton, setReopenedButton] = useState(false);
 
   useEffect(() => {
     if (open) inputRef.current?.focus({ preventScroll: true });
@@ -37,7 +41,12 @@ export function ReviewSearchBar({
 
   if (!open) {
     return (
-      <button type="button" onClick={onOpen} disabled={disabled} className={buttonClass("secondary")}>
+      <button
+        type="button"
+        onClick={onOpen}
+        disabled={disabled}
+        className={`${buttonClass("secondary")} ${reopenedButton ? "motion-safe:animate-fade-in" : ""}`}
+      >
         <ListChecks size={16} aria-hidden="true" />
         ¿Qué me falta?
       </button>
@@ -45,9 +54,17 @@ export function ReviewSearchBar({
   }
 
   const ready = goal.trim().length >= MIN_GOAL;
-  const close = () => {
-    setNudge(false);
+  const finishClose = () => {
+    setClosing(false);
+    setReopenedButton(true);
     onClose();
+  };
+  const close = () => {
+    if (closing) return;
+    setNudge(false);
+    // Without motion there is no animation to wait for.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) finishClose();
+    else setClosing(true);
   };
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -65,7 +82,12 @@ export function ReviewSearchBar({
       role="search"
       aria-label="¿Qué me falta?"
       onSubmit={submit}
-      className="relative flex w-full items-center gap-1 rounded-full border border-brand bg-paper py-1 pl-3.5 pr-1 shadow-sm ring-2 ring-brand-soft sm:w-[28rem] motion-safe:animate-search-open"
+      onAnimationEnd={(e) => {
+        if (closing && e.target === e.currentTarget) finishClose();
+      }}
+      className={`relative flex w-full items-center gap-1 rounded-full border border-brand bg-paper py-1 pl-3.5 pr-1 shadow-sm ring-2 ring-brand-soft sm:w-[28rem] ${
+        closing ? "pointer-events-none overflow-hidden motion-safe:animate-search-close" : "motion-safe:animate-search-open"
+      }`}
     >
       <Search size={16} className="shrink-0 text-mid-gray" aria-hidden="true" />
       <input
@@ -89,7 +111,7 @@ export function ReviewSearchBar({
         aria-label="¿Qué quieres lograr?"
         aria-invalid={nudge || undefined}
         aria-describedby={nudge ? "review-goal-hint" : undefined}
-        placeholder="¿Qué quieres lograr? Ej: duplicar la venta de pollos"
+        placeholder="¿Qué quieres lograr? Ej: duplicar la producción"
         className="min-w-0 flex-1 bg-transparent py-1 text-sm text-ink placeholder:text-mid-gray focus:outline-none disabled:opacity-60"
       />
       <button

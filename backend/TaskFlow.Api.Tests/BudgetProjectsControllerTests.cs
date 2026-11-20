@@ -35,10 +35,12 @@ public class BudgetProjectsControllerTests
         public bool Fail { get; set; }
         public int Calls { get; private set; }
 
-        public Task<string> QuoteAsync(string name, string category, CancellationToken cancellationToken = default)
+        public Task<string> QuoteAsync(string name, string category, bool includeBuyLinks = false, CancellationToken cancellationToken = default)
         {
             Calls++;
             if (Fail) throw new BudgetQuoteException("La IA falló.");
+            if (includeBuyLinks)
+                return Task.FromResult(BudgetQuoteSummary.Format("$1 - $2 CLP", "Marca", $"Tienda de {name}", [], [new BudgetBuyLink("Tienda", "https://tienda.cl/producto")]));
             return Task.FromResult($"Rango: $1 - $2 CLP. Proveedores sugeridos: Tienda de {name}.");
         }
     }
@@ -246,6 +248,25 @@ public class BudgetProjectsControllerTests
         Assert.Equal(1000m, dto.EstimatedAmount);
         Assert.Equal(1, quoter.Calls);
         Assert.Contains("Tienda de Carne", db.BudgetItems.Single().AiQuoteSummary);
+    }
+
+    [Fact]
+    public async Task QuoteItem_AskingForBuyLinks_RequotesTodaysQuoteOnlyIfItHasNone()
+    {
+        var (controller, db, userId, _, quoter) = NewControllerWithQuoter();
+        var project = await SeedProject(db, userId);
+        var item = project.Items.Single();
+
+        await controller.QuoteItem(project.Id, item.Id, default);
+        var withLinks = await controller.QuoteItem(project.Id, item.Id, default, buyLinks: true);
+        await controller.QuoteItem(project.Id, item.Id, default, buyLinks: true);
+        await controller.QuoteItem(project.Id, item.Id, default);
+
+        var dto = Assert.IsType<BudgetItemDto>(Assert.IsType<OkObjectResult>(withLinks.Result).Value);
+        Assert.Equal([new BudgetBuyLink("Tienda", "https://tienda.cl/producto")], dto.Quote!.BuyLinks!);
+        Assert.Null(dto.Quote.Sources);
+        // The first quote and the one that added links; the later calls reuse the saved answer.
+        Assert.Equal(2, quoter.Calls);
     }
 
     private static async Task<BudgetProject> SeedMixedProject(AppDbContext db, Guid userId)

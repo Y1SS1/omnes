@@ -17,7 +17,7 @@ public class BudgetProjectsAddItemsTests
             IReadOnlyList<BudgetItemToClassify> items, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("No debería llamar a la IA.");
 
-        public Task<string> QuoteAsync(string name, string category, CancellationToken cancellationToken = default) =>
+        public Task<string> QuoteAsync(string name, string category, bool includeBuyLinks = false, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("No debería llamar a la IA.");
     }
 

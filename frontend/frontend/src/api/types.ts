@@ -5,6 +5,13 @@ export interface BudgetQuoteBlocks {
   bestValue: string;
   suppliers: string;
   sources: string | null;
+  // Product pages where the best option can be bought; when present they replace the sources.
+  buyLinks: BudgetBuyLink[] | null;
+}
+
+export interface BudgetBuyLink {
+  store: string;
+  url: string;
 }
 
 export interface BudgetItemDto {

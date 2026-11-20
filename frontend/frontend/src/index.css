@@ -44,6 +44,8 @@
      - fade-in / dialog-in: a modal's dark backdrop and its window.
      - page-in: each screen as the user moves between them. */
   --animate-search-open: search-open 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* The same bar folding back into the button when it is closed. */
+  --animate-search-close: search-close 220ms cubic-bezier(0.4, 0, 1, 1) forwards;
   --animate-panel-in: panel-in 260ms ease-out;
   --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 150ms ease-out;
@@ -111,6 +113,17 @@
     to {
       max-width: 28rem;
       opacity: 1;
+    }
+  }
+
+  @keyframes search-close {
+    from {
+      max-width: 28rem;
+      opacity: 1;
+    }
+    to {
+      max-width: 11rem;
+      opacity: 0;
     }
   }
 

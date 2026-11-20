@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChartLine, Check, CircleCheck, Download, RefreshCw, Sparkles, Star, Wallet, X } from "lucide-react";
+import { ArrowLeft, ChartLine, Check, CircleCheck, Download, ExternalLink, RefreshCw, Sparkles, Star, Wallet, X } from "lucide-react";
 import * as budgetProjectsApi from "../api/budgetProjects";
 import * as plannedItemsApi from "../api/plannedItems";
 import type { BudgetItemDto, BudgetItemType, BudgetProjectDto } from "../api/types";
@@ -21,13 +21,13 @@ const clp = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" 
 
 // A failed quote is usually temporary, so it gets one more try. Other answers,
 // such as the daily limit, would only repeat themselves.
-async function quoteWithRetry(projectId: string, itemId: string) {
+async function quoteWithRetry(projectId: string, itemId: string, buyLinks: boolean) {
   try {
-    return await budgetProjectsApi.quoteItem(projectId, itemId);
+    return await budgetProjectsApi.quoteItem(projectId, itemId, buyLinks);
   } catch (error) {
     const status = (error as { response?: { status?: number } }).response?.status;
     if (status !== undefined && status !== 503) throw error;
-    return await budgetProjectsApi.quoteItem(projectId, itemId);
+    return await budgetProjectsApi.quoteItem(projectId, itemId, buyLinks);
   }
 }
 
@@ -63,6 +63,8 @@ export default function BudgetProjectPage() {
   // Rows that changed during this visit, so only they animate (not every row on page load).
   const [justQuoted, setJustQuoted] = useState<ReadonlySet<string>>(new Set());
   const [justAdded, setJustAdded] = useState<ReadonlySet<string>>(new Set());
+  // Chosen before quoting: the AI also brings product pages to buy each asset.
+  const [buyLinks, setBuyLinks] = useState(false);
 
   // Shown once: drop the flag from the history entry so a reload does not repeat the notice.
   useEffect(() => {
@@ -116,7 +118,7 @@ export default function BudgetProjectPage() {
       while (queue.length > 0 && blockedBy === null && !leftPage.current) {
         const itemId = queue.shift()!;
         try {
-          const updated = await quoteWithRetry(project.id, itemId);
+          const updated = await quoteWithRetry(project.id, itemId, buyLinks);
           setProject((current) =>
             current && { ...current, items: current.items.map((item) => (item.id === updated.id ? updated : item)) }
           );
@@ -257,6 +259,8 @@ export default function BudgetProjectPage() {
   const allQuoted = assetCount === 0 || quotedCount === assetCount;
   const step: Step = !allQuoted ? 1 : !inWallet ? 2 : 3;
   const reportsUrl = `/reports?presupuesto=${project.id}`;
+  // Any asset quoted with purchase links turns the sources column into "Dónde comprar".
+  const hasBuyLinks = project.items.some((item) => (item.quote?.buyLinks?.length ?? 0) > 0);
   const sum = (items: BudgetItemDto[]) => items.reduce((total, item) => total + item.estimatedAmount, 0);
 
   // Every asset is searched on the web again, so the cost is spelled out first.
@@ -265,7 +269,11 @@ export default function BudgetProjectPage() {
       title: "¿Actualizar todos los precios?",
       message: `Se vuelven a buscar en internet los precios de ${
         assetCount === 1 ? "1 activo" : `los ${assetCount} activos`
-      }. Lo cotizado hoy no se cobra de nuevo.`,
+      }. ${
+        buyLinks
+          ? "Lo cotizado hoy que ya tiene links de compra no se cobra de nuevo; lo que no los tiene se vuelve a buscar para agregarlos."
+          : "Lo cotizado hoy no se cobra de nuevo."
+      }`,
       confirmLabel: "Actualizar precios",
     });
     if (ok) await generate("all");
@@ -304,6 +312,7 @@ export default function BudgetProjectPage() {
               {quoting ? "Generando..." : "Generar presupuesto actualizado"}
             </Button>
           )}
+          <BuyLinksSwitch checked={buyLinks} onChange={setBuyLinks} disabled={quoting || assetCount === 0} />
           <ReviewSearchBar
             open={searchOpen}
             goal={reviewGoal}
@@ -487,7 +496,7 @@ export default function BudgetProjectPage() {
                 <HeaderCell colSpan={3} center quote>
                   Cotización Nueva
                 </HeaderCell>
-                <HeaderCell rowSpan={2}>Fuentes consultadas</HeaderCell>
+                <HeaderCell rowSpan={2}>{hasBuyLinks ? "Dónde comprar" : "Fuentes consultadas"}</HeaderCell>
                 <HeaderCell rowSpan={2}>Fecha de cotización</HeaderCell>
               </tr>
               <tr className="border-b border-hairline">
@@ -509,6 +518,11 @@ export default function BudgetProjectPage() {
               ))}
             </tbody>
           </table>
+          {hasBuyLinks && (
+            <p className="border-t border-hairline px-4 py-2.5 text-xs text-mid-gray">
+              Los links de compra llevan a la tienda que encontró la IA: verifica el precio y el stock antes de comprar.
+            </p>
+          )}
         </Card>
       )}
 
@@ -652,7 +666,28 @@ function ItemRow({
             )}
           </td>
           <td className={quoteCell}>{item.quote?.suppliers ?? NOT_QUOTED_YET}</td>
-          <td className={`px-3 py-3 text-xs text-mid-gray ${arrived}`}>{item.quote?.sources}</td>
+          <td className={`px-3 py-3 text-xs text-mid-gray ${arrived}`}>
+            {item.quote?.buyLinks?.length ? (
+              <span className="flex flex-col items-start gap-1.5">
+                {item.quote.buyLinks.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    title={link.url}
+                    className="inline-flex max-w-[11rem] items-center gap-1 rounded-full border border-hairline bg-paper px-2.5 py-1 font-semibold text-accent hover:border-brand hover:bg-brand-soft"
+                  >
+                    <span className="truncate">{link.store}</span>
+                    <ExternalLink size={12} className="shrink-0" aria-hidden="true" />
+                    <span className="sr-only">(se abre en otra pestaña)</span>
+                  </a>
+                ))}
+              </span>
+            ) : (
+              item.quote?.sources
+            )}
+          </td>
           <td className={`px-3 py-3 whitespace-nowrap ${arrived}`}>
             {item.aiQuotedAt && new Date(item.aiQuotedAt).toLocaleDateString("es-CL", { timeZone: "America/Santiago" })}
           </td>
@@ -709,5 +744,34 @@ function Steps({ step }: { step: Step }) {
         {STEPS[step - 1].hint}
       </p>
     </nav>
+  );
+}
+
+// Asked before quoting, as the teacher suggested: with it on, the AI also brings product pages
+// where each asset can be bought, shown instead of the sources consulted.
+function BuyLinksSwitch({ checked, onChange, disabled }: { checked: boolean; onChange: (value: boolean) => void; disabled: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      title="La IA agrega links a páginas de tiendas donde comprar cada activo. Aplica a lo que cotices desde ahora."
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? "border-brand bg-brand-soft text-ink" : "border-hairline bg-paper text-mid-gray hover:text-ink"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`relative block h-4 w-7 shrink-0 rounded-full transition-colors ${checked ? "bg-brand" : "bg-hairline"}`}
+      >
+        {/* Pinned to the track's left edge: without left-0 it sat after the track, over the label. */}
+        <span
+          className={`absolute left-0 top-0.5 block h-3 w-3 rounded-full bg-paper shadow transition-transform ${checked ? "translate-x-3.5" : "translate-x-0.5"}`}
+        />
+      </span>
+      Incluir links de compra
+    </button>
   );
 }

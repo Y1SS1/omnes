@@ -182,4 +182,62 @@ public class FoundryBudgetItemQuoterTests
 
         Assert.Equal(["datos.odepa.gob.cl", "lider.cl", "elmostrador.cl", "aprocarne.cl", "tottus.cl"], sources);
     }
+
+    private const string AnswerWithLinks = """
+        {"price_range":"$5.000 - $9.000 CLP por kg","best_value":"Marca X","suppliers":["Lider","Mayorista 10"],
+         "buy_links":[{"store":"Lider","url":"https://lider.cl/carne-molida?utm_source=openai"},
+                      {"store":"Inventada","url":"https://tienda-falsa.cl/producto"},
+                      {"store":"Portada","url":"https://www.jumbo.cl/"}]}
+        """;
+
+    [Fact]
+    public async Task QuoteAsync_WithBuyLinks_AsksForThemInTheSchema()
+    {
+        var api = new FakeFoundryApi(HttpStatusCode.OK, ApiResponse(AnswerWithLinks));
+
+        await NewQuoter(api).QuoteAsync("Carne", "Insumos", includeBuyLinks: true);
+
+        using var request = JsonDocument.Parse(api.RequestBody!);
+        var root = request.RootElement;
+        var required = root.GetProperty("text").GetProperty("format").GetProperty("schema").GetProperty("required")
+            .EnumerateArray().Select(e => e.GetString());
+        Assert.Equal(["price_range", "best_value", "suppliers", "buy_links"], required);
+        Assert.Contains("links a páginas de producto", root.GetProperty("input").GetString());
+    }
+
+    [Fact]
+    public async Task QuoteAsync_WithBuyLinks_KeepsOnlyProductPagesTheSearchOpened()
+    {
+        var api = new FakeFoundryApi(HttpStatusCode.OK, ApiResponse(AnswerWithLinks,
+            sources: ["https://www.lider.cl/carne-molida", "https://www.jumbo.cl/"]));
+
+        var quote = await NewQuoter(api).QuoteAsync("Carne", "Insumos", includeBuyLinks: true);
+
+        // The made-up store and the bare home page are dropped; the link kept is the page the search opened.
+        Assert.Equal($"{ValidSummary} Dónde comprar: Lider <https://www.lider.cl/carne-molida>.", quote);
+        var blocks = BudgetQuoteSummary.Parse(quote)!;
+        Assert.Equal([new BudgetBuyLink("Lider", "https://www.lider.cl/carne-molida")], blocks.BuyLinks!);
+        Assert.Null(blocks.Sources);
+        Assert.Equal("Lider, Mayorista 10", blocks.Suppliers);
+    }
+
+    [Fact]
+    public async Task QuoteAsync_WithBuyLinksButNoneVerified_KeepsTheSources()
+    {
+        var api = new FakeFoundryApi(HttpStatusCode.OK, ApiResponse(AnswerWithLinks, sources: ["https://www.odepa.gob.cl/precios"]));
+
+        var quote = await NewQuoter(api).QuoteAsync("Carne", "Insumos", includeBuyLinks: true);
+
+        Assert.Equal($"{ValidSummary} Fuentes consultadas: odepa.gob.cl.", quote);
+    }
+
+    [Fact]
+    public void Parse_ReadsSeveralBuyLinksBack()
+    {
+        BudgetBuyLink[] links = [new("Lider", "https://www.lider.cl/a?x=1&y=2"), new("Mayorista 10", "https://m10.cl/b")];
+
+        var blocks = BudgetQuoteSummary.Parse(BudgetQuoteSummary.Format("$1 CLP", "Marca", "Lider", ["lider.cl"], links))!;
+
+        Assert.Equal(links, blocks.BuyLinks!);
+    }
 }

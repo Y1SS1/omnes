@@ -56,8 +56,10 @@ export async function updateItemType(projectId: string, itemId: string, type: Bu
   return data;
 }
 
-export async function quoteItem(projectId: string, itemId: string) {
-  const { data } = await api.post<BudgetItemDto>(`/budget-projects/${projectId}/items/${itemId}/quote`);
+export async function quoteItem(projectId: string, itemId: string, buyLinks = false) {
+  const { data } = await api.post<BudgetItemDto>(`/budget-projects/${projectId}/items/${itemId}/quote`, null, {
+    params: buyLinks ? { buyLinks: true } : undefined,
+  });
   return data;
 }
 

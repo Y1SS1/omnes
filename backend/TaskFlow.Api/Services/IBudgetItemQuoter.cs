@@ -2,8 +2,9 @@ namespace TaskFlow.Api.Services;
 
 public interface IBudgetItemQuoter
 {
-    // Returns the plain text stored next to the item: price range, best-value option, suppliers and sources.
-    Task<string> QuoteAsync(string name, string category, CancellationToken cancellationToken = default);
+    // Returns the plain text stored next to the item: price range, best-value option, suppliers, and
+    // either the sources consulted or, with includeBuyLinks, product pages where it can be bought.
+    Task<string> QuoteAsync(string name, string category, bool includeBuyLinks = false, CancellationToken cancellationToken = default);
 }
 
 // Its message is safe to show to the user as-is.

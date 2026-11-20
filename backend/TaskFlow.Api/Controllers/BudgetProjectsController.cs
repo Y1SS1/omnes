@@ -243,7 +243,8 @@ public partial class BudgetProjectsController : ControllerBase
     // One item per call: a whole budget takes minutes, longer than one request can
     // safely stay open, and this way every finished quote is already saved.
     [HttpPost("{projectId:guid}/items/{itemId:guid}/quote")]
-    public async Task<ActionResult<BudgetItemDto>> QuoteItem(Guid projectId, Guid itemId, CancellationToken cancellationToken)
+    public async Task<ActionResult<BudgetItemDto>> QuoteItem(
+        Guid projectId, Guid itemId, CancellationToken cancellationToken, [FromQuery] bool buyLinks = false)
     {
         var userId = _currentUser.UserId;
         var item = await _db.BudgetItems.FirstOrDefaultAsync(i =>
@@ -253,9 +254,11 @@ public partial class BudgetProjectsController : ControllerBase
         // Obligations such as rent or electricity keep their amount: only purchases are quoted.
         if (item.Type != BudgetItemType.Asset) return BadRequest("Solo se cotizan los ítems clasificados como activos.");
 
-        // Every quote spends credit, so repeating one on the same day reuses the saved answer.
+        // Every quote spends credit, so repeating one on the same day reuses the saved answer, unless
+        // purchase links are asked for now and that answer has none.
         var startOfToday = ChileTime.StartOfTodayUtc();
-        if (item.AiQuotedAt >= startOfToday) return Ok(ToDto(item));
+        var missingLinks = buyLinks && BudgetQuoteSummary.Parse(item.AiQuoteSummary)?.BuyLinks is not { Count: > 0 };
+        if (item.AiQuotedAt >= startOfToday && !missingLinks) return Ok(ToDto(item));
 
         // Excludes this project so that a budget already started today can always finish.
         var otherProjectsQuotedToday = await _db.BudgetItems
@@ -269,7 +272,7 @@ public partial class BudgetProjectsController : ControllerBase
 
         try
         {
-            item.AiQuoteSummary = await _quoter.QuoteAsync(item.Name, item.Category, cancellationToken);
+            item.AiQuoteSummary = await _quoter.QuoteAsync(item.Name, item.Category, buyLinks, cancellationToken);
         }
         catch (BudgetQuoteException ex)
         {

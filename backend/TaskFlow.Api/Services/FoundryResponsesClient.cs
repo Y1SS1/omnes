@@ -88,13 +88,24 @@ public record FoundryResponse(
         .SelectMany(o => o.Action?.Sources ?? [])
         .Select(s => s.Url)
         .OfType<string>();
+
+    // Pages the answer cites: the web search opened them, even when they are not listed among its sources.
+    public IEnumerable<string> CitedUrls() => (Output ?? [])
+        .Where(o => o.Type == "message")
+        .SelectMany(o => o.Content ?? [])
+        .SelectMany(c => c.Annotations ?? [])
+        .Where(a => a.Type == "url_citation")
+        .Select(a => a.Url)
+        .OfType<string>();
 }
 
 public record FoundryIncompleteDetails(string? Reason);
 
 public record FoundryOutputItem(string? Type, List<FoundryContentPart>? Content, FoundryWebSearchAction? Action);
 
-public record FoundryContentPart(string? Type, string? Text);
+public record FoundryContentPart(string? Type, string? Text, List<FoundryAnnotation>? Annotations = null);
+
+public record FoundryAnnotation(string? Type, string? Url);
 
 public record FoundryWebSearchAction(List<FoundryWebSource>? Sources);
 
